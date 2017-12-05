@@ -49,6 +49,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -956,7 +957,7 @@ public class PeerTest extends TestWithNetworkConnections {
         }.bitcoinSerialize(), out);
         writeTarget.writeTarget.writeBytes(out.toByteArray());
         try {
-            result.get();
+            result.get(1, TimeUnit.SECONDS);
             fail();
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof ProtocolException);
