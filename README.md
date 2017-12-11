@@ -8,7 +8,9 @@ The bitcoinj.cash library is a Java implementation of the Bitcoin cash protocol.
 
 It allows maintaining a wallet and sending/receiving transactions without needing a full blockchain node. It comes with full documentation and some example apps showing how to use it.
 
-For support and discussion please join us on the [mailing list](https://groups.google.com/forum/#!forum/bitcoinj-cash)
+For support and discussion please join us on the [mailing list](https://groups.google.com/forum/#!forum/bitcoinj-cash).
+
+Release notes are [here](docs/Releases.md).
 
 ### Technologies
 
@@ -60,3 +62,12 @@ more info on this technique.
 ### Where next?
 
 Now you are ready to [follow the tutorial](https://bitcoinj.github.io/getting-started).
+
+### Contributing to Bitcoinj Cash
+
+Contributions to Bitcoinj Cash are welcome and encouraged.
+
+* the development branch is `cash` 
+* release branches are named `cash-<version>`
+* Travis-CI is [here](https://travis-ci.org/bitcoinj-cash/bitcoinj)
+* Coveralls test coverage report is [here](https://coveralls.io/github/bitcoinj-cash/bitcoinj)
