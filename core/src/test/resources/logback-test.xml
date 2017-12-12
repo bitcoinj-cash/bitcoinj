@@ -1,0 +1,18 @@
+<configuration debug="false">
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!--
+        turn logs off by default for tests
+        to debug tests you might need to increase this, but be aware that a lot of logs are produced
+        including intentional warnings and errors
+    -->
+    <root level="OFF">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+</configuration>

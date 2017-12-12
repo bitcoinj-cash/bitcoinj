@@ -22,10 +22,9 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 /**
- * A Postgres implementation of the {@link AbstractFullPrunedBlockChainTest}
+ * A Postgres implementation of the {@link AbstractFullPrunedBlockChainIT}
  */
-@Ignore("enable the postgres driver dependency in the maven POM")
-public class PostgresFullPrunedBlockChainTest extends AbstractFullPrunedBlockChainTest
+public class PostgresFullPrunedBlockChainIT extends AbstractFullPrunedBlockChainIT
 {
     // Replace these with your postgres location/credentials and remove @Ignore to test
     // You can set up a fresh postgres with the command: create user bitcoinj superuser password 'password';

@@ -24,7 +24,7 @@ import java.io.File;
 /**
  * An H2 implementation of the FullPrunedBlockStoreTest
  */
-public class H2FullPrunedBlockChainTest extends AbstractFullPrunedBlockChainTest {
+public class H2FullPrunedBlockChainIT extends AbstractFullPrunedBlockChainIT {
     @After
     public void tearDown() throws Exception {
         deleteFiles();
