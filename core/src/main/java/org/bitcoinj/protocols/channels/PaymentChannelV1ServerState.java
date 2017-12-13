@@ -179,12 +179,13 @@ public class PaymentChannelV1ServerState extends PaymentChannelServerState {
     /**
      * <p>Closes this channel and broadcasts the highest value payment transaction on the network.</p>
      *
-     * <p>This will set the state to {@link State#CLOSED} if the transaction is successfully broadcast on the network.
-     * If we fail to broadcast for some reason, the state is set to {@link State#ERROR}.</p>
+     * <p>This will set the state to {@link PaymentChannelServerState.State#CLOSED} if the transaction is successfully
+     * broadcast on the network. If we fail to broadcast for some reason, the state is set to
+     * {@link PaymentChannelServerState.State#ERROR}.</p>
      *
-     * <p>If the current state is before {@link State#READY} (ie we have not finished initializing the channel), we
-     * simply set the state to {@link State#CLOSED} and let the client handle getting its refund transaction confirmed.
-     * </p>
+     * <p>If the current state is before {@link PaymentChannelServerState.State#READY} (ie we have not finished
+     * initializing the channel), we simply set the state to {@link PaymentChannelServerState.State#CLOSED} and let the
+     * client handle getting its refund transaction confirmed. </p>
      *
      * @return a future which completes when the provided multisig contract successfully broadcasts, or throws if the
      *         broadcast fails for some reason. Note that if the network simply rejects the transaction, this future

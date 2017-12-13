@@ -150,7 +150,7 @@
                 <configuration>
                     <detectLinks/>
                     <links>
-                        <link>http://docs.guava-libraries.googlecode.com/git-history/release/javadoc/</link>
+                        <link>http://google.github.io/guava/releases/18.0/api/docs/</link>
                     </links>
                     <detectJavaApiLink/>
                     <quiet>true</quiet>

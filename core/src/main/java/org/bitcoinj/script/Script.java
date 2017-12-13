@@ -305,7 +305,6 @@ public class Script {
 
     /**
      * Retrieves the sender public key from a LOCKTIMEVERIFY transaction
-     * @return
      * @throws ScriptException
      */
     public byte[] getCLTVPaymentChannelSenderPubKey() throws ScriptException {
@@ -317,7 +316,6 @@ public class Script {
 
     /**
      * Retrieves the recipient public key from a LOCKTIMEVERIFY transaction
-     * @return
      * @throws ScriptException
      */
     public byte[] getCLTVPaymentChannelRecipientPubKey() throws ScriptException {
