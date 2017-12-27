@@ -17,18 +17,17 @@
 
 package org.bitcoinj.params;
 
-import java.math.BigInteger;
-import java.util.concurrent.TimeUnit;
-
 import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
 import org.bitcoinj.core.*;
-import org.bitcoinj.utils.MonetaryFormat;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
+import org.bitcoinj.utils.MonetaryFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Stopwatch;
+import java.math.BigInteger;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Parameters for Bitcoin-like networks.
@@ -43,7 +42,11 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
     // Aug, 1 hard fork
     int uahfHeight = 478559;
-    /** Activation time at which the cash HF kicks in. */
+    // Nov, 13 hard fork
+    int daaHeight = 504031;
+    /**
+     * Activation time at which the cash HF kicks in.
+     */
     protected long cashHardForkActivationTime;
 
     public AbstractBitcoinNetParams() {
@@ -52,6 +55,7 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
     /**
      * Checks if we are at a difficulty transition point.
+     *
      * @param storedPrev The previous stored block
      * @return If this is a difficulty transition point
      */
@@ -61,10 +65,10 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
     @Override
     public void checkDifficultyTransitions(final StoredBlock storedPrev, final Block nextBlock,
-    	final BlockStore blockStore, AbstractBlockChain blockChain) throws VerificationException, BlockStoreException {
+                                           final BlockStore blockStore, AbstractBlockChain blockChain) throws VerificationException, BlockStoreException {
         Block prev = storedPrev.getHeader();
 
-        if (blockChain.getMedianTimestampOfRecentBlocks(storedPrev, blockStore) >= cashHardForkActivationTime) {
+        if (storedPrev.getHeight() >= daaHeight) {
             checkNextCashWorkRequired(storedPrev, nextBlock, blockStore);
             return;
         }
@@ -72,8 +76,7 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         // Is this supposed to be a difficulty transition point
         if (!isDifficultyTransitionPoint(storedPrev)) {
 
-            if(storedPrev.getHeader().getDifficultyTargetAsInteger().equals(getMaxTarget()))
-            {
+            if (storedPrev.getHeader().getDifficultyTargetAsInteger().equals(getMaxTarget())) {
                 // No ... so check the difficulty didn't actually change.
                 if (nextBlock.getDifficultyTarget() != prev.getDifficultyTarget())
                     throw new VerificationException("Unexpected change in difficulty at height " + storedPrev.getHeight() +
@@ -89,27 +92,25 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
                     return;
                     // This should never happen. If it does, it means we are following an incorrect or busted chain.
                     //throw new VerificationException(
-                      //      "We did not find a way back to the genesis block.");
+                    //      "We did not find a way back to the genesis block.");
                 }
                 cursor = blockStore.get(cursor.getHeader().getPrevBlockHash());
             }
             long mpt6blocks = 0;
             try {
                 mpt6blocks = blockChain.getMedianTimestampOfRecentBlocks(storedPrev, blockStore) - blockChain.getMedianTimestampOfRecentBlocks(cursor, blockStore);
-            } catch (NullPointerException x)
-            {
+            } catch (NullPointerException x) {
                 return;
             }
 
             // If producing the last 6 block took more than 12h, increase the difficulty
             // target by 1/4 (which reduces the difficulty by 20%). This ensure the
             // chain do not get stuck in case we lose hashrate abruptly.
-            if(mpt6blocks >= 12 * 3600)
-            {
+            if (mpt6blocks >= 12 * 3600) {
                 BigInteger nPow = storedPrev.getHeader().getDifficultyTargetAsInteger();
                 nPow = nPow.add(nPow.shiftRight(2));
 
-                if(nPow.compareTo(getMaxTarget()) > 0)
+                if (nPow.compareTo(getMaxTarget()) > 0)
                     nPow = getMaxTarget();
 
                 if (nextBlock.getDifficultyTarget() != Utils.encodeCompactBits(nPow))
@@ -118,8 +119,6 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
                             Utils.encodeCompactBits(nPow));
                 return;
             }
-
-
 
 
             // No ... so check the difficulty didn't actually change.
@@ -180,8 +179,8 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
                     Long.toHexString(newTargetCompact) + " vs " + Long.toHexString(receivedTargetCompact));
                     */
     }
-    void verifyDifficulty(BigInteger newTarget, Block nextBlock)
-    {
+
+    void verifyDifficulty(BigInteger newTarget, Block nextBlock) {
         if (newTarget.compareTo(this.getMaxTarget()) > 0) {
             log.info("Difficulty hit proof of work limit: {}", newTarget.toString(16));
             newTarget = this.getMaxTarget();
@@ -210,10 +209,10 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
      * Compute the a target based on the work done between 2 blocks and the time
      * required to produce that work.
      */
-     BigInteger ComputeTarget(StoredBlock pindexFirst,
-                                   StoredBlock pindexLast) {
+    BigInteger ComputeTarget(StoredBlock pindexFirst,
+                             StoredBlock pindexLast) {
 
-         Preconditions.checkState(pindexLast.getHeight() > pindexFirst.getHeight());
+        Preconditions.checkState(pindexLast.getHeight() > pindexFirst.getHeight());
 
         /**
          * From the total work done and the time it took to produce that much work,
@@ -241,18 +240,18 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
          * 2^256 - W as the complement of W.
          */
         //return (-work) / work;
-         //return BigInteger.valueOf(2).pow(256).divide(work).subtract(BigInteger.valueOf(1));
+        //return BigInteger.valueOf(2).pow(256).divide(work).subtract(BigInteger.valueOf(1));
 
-         //return Block.LARGEST_HASH.divide(target.add(BigInteger.ONE))
+        //return Block.LARGEST_HASH.divide(target.add(BigInteger.ONE))
 
-         return LARGEST_HASH.divide(work).subtract(BigInteger.ONE);//target.add(BigInteger.ONE))
+        return LARGEST_HASH.divide(work).subtract(BigInteger.ONE);//target.add(BigInteger.ONE))
     }
 
-/**
- * To reduce the impact of timestamp manipulation, we select the block we are
- * basing our computation on via a median of 3.
- */
-    StoredBlock GetSuitableBlock(StoredBlock pindex, BlockStore blockStore) throws BlockStoreException{
+    /**
+     * To reduce the impact of timestamp manipulation, we select the block we are
+     * basing our computation on via a median of 3.
+     */
+    StoredBlock GetSuitableBlock(StoredBlock pindex, BlockStore blockStore) throws BlockStoreException {
         //assert(pindex->nHeight >= 3);
 
         /**
@@ -294,7 +293,7 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     /**
      * Compute the next required proof of work using a weighted average of the
      * estimated hashrate per block.
-     *
+     * <p>
      * Using a weighted average ensure that the timestamp parameter cancels out in
      * most of the calculation - except for the timestamp of the first and last
      * block. Because timestamps are the least trustworthy information we have as
@@ -328,10 +327,9 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
             StoredBlock pindexFirst = pindexPrev;
 
-            for (int i = 144; i > 0; --i)
-            {
+            for (int i = 144; i > 0; --i) {
                 pindexFirst = pindexFirst.getPrev(blockStore);
-                if(pindexFirst == null)
+                if (pindexFirst == null)
                     return;
             }
 
@@ -343,9 +341,7 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
                     ComputeTarget(pindexFirst, pindexLast);
 
             verifyDifficulty(nextTarget, pblock);
-        }
-        catch (BlockStoreException x)
-        {
+        } catch (BlockStoreException x) {
             //this means we don't have enough blocks, yet.  let it go until we do.
             return;
         }
