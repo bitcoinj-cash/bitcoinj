@@ -21,7 +21,7 @@ import org.bitcoinj.store.MemoryFullPrunedBlockStore;
 /**
  * A MemoryStore implementation of the FullPrunedBlockStoreTest
  */
-public class MemoryFullPrunedBlockChainTest extends AbstractFullPrunedBlockChainTest
+public class MemoryFullPrunedBlockChainIT extends AbstractFullPrunedBlockChainIT
 {
     @Override
     public FullPrunedBlockStore createStore(NetworkParameters params, int blockCount) throws BlockStoreException

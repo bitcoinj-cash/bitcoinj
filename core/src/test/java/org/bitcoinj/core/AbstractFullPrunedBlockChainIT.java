@@ -46,11 +46,11 @@ import org.junit.rules.ExpectedException;
  * We don't do any wallet tests here, we leave that to {@link ChainSplitTest}
  */
 
-public abstract class AbstractFullPrunedBlockChainTest {
+public abstract class AbstractFullPrunedBlockChainIT {
     @org.junit.Rule
     public ExpectedException thrown = ExpectedException.none();
 
-    private static final Logger log = LoggerFactory.getLogger(AbstractFullPrunedBlockChainTest.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractFullPrunedBlockChainIT.class);
 
     protected static final NetworkParameters PARAMS = new UnitTestParams() {
         @Override public int getInterval() {

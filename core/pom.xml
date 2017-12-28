@@ -52,6 +52,27 @@
 
     <profiles>
         <profile>
+            <id>dev</id> <!-- default profile -->
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <!-- exclude postgres and mysql tests, these need environment setup -->
+                                <exclude>**/PostgresFullPrunedBlockChainIT.java</exclude>
+                                <exclude>**/MySQLFullPrunedBlockChainIT.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>update-protobuf</id>
             <activation>
                 <property>
@@ -92,7 +113,7 @@
             </build>
         </profile>
         <profile>
-            <id>no-network</id>
+            <id>travis</id> <!-- profile for travis CI testing -->
             <build>
                 <plugins>
                     <plugin>
@@ -104,6 +125,10 @@
                                 <exclude>**/core/TransactionBroadcastTest.java</exclude>
                             </excludes>
                         </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
@@ -183,6 +208,8 @@
                                     <!-- classifier is "null" if not present -->
                                     <urns>
                                         <urn>cglib:cglib-nodep:2.2:jar:null:test:59afed7ab65e7ec6585d5bc60556c3cbd203532b</urn>
+                                        <urn>ch.qos.logback:logback-classic:1.2.3:jar:null:test:7c4f3c474fb2c041d8028740440937705ebb473a</urn>
+                                        <urn>ch.qos.logback:logback-core:1.2.3:jar:null:test:864344400c3d4d92dfeb0a305dc87d953677c03c</urn>
                                         <urn>com.fasterxml.jackson.core:jackson-annotations:2.5.0:jar:null:test:a2a55a3375bc1cef830ca426d68d2ea22961190e</urn>
                                         <urn>com.fasterxml.jackson.core:jackson-core:2.5.1:jar:null:test:e2a00ad1d7e540ec395e9296a34da484c8888d4d</urn>
                                         <urn>com.fasterxml.jackson.core:jackson-databind:2.5.2:jar:null:test:2b4dd13fbe6f8c6b146d4c3b7fd70862f136802d</urn>
@@ -275,12 +302,15 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.7.5.201505241946</version>
+                <version>0.7.9</version>
                 <configuration>
                     <excludes>
                         <exclude>**/Protos*.class</exclude> <!-- Exclude generated protobuf classes -->
+                        <exclude>**/ClientState*</exclude> <!-- also protobuf -->
+                        <exclude>**/ServerState*</exclude> <!-- also protobuf -->
                         <exclude>org/bitcoinj/jni/*</exclude> <!-- Exclude JNI classes -->
-                        <exclude>org/bitcoin/*</exclude> <!-- Exclude native classes -->
+                        <exclude>org/bitcoin/**/*</exclude> <!-- Exclude native classes -->
+                        <exclude>**/HttpDiscovery.class</exclude> <!-- not used in Bitcoin Cash -->
                     </excludes>
                 </configuration>
                 <executions>
@@ -290,24 +320,23 @@
                             <goal>prepare-agent</goal>
                         </goals>
                         <configuration>
-                            <destFile>${project.build.directory}/coverage-reports/jacoco.exec</destFile>
+                            <destFile>${project.build.directory}/jacoco.exec</destFile>
                             <propertyName>surefireArgLine</propertyName>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>post-unit-test</id>
-                        <phase>test</phase>
+                        <id>pre-integration-test</id>
+                        <phase>pre-integration-test</phase>
                         <goals>
-                            <goal>report</goal>
+                            <goal>prepare-agent</goal>
                         </goals>
                         <configuration>
-                            <dataFile>${project.build.directory}/coverage-reports/jacoco.exec</dataFile>
-                            <outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
+                            <destFile>${project.build.directory}/jacoco.exec</destFile>
+                            <propertyName>failsafeArgLine</propertyName>
                         </configuration>
                     </execution>
                     <execution>
                         <id>default-report</id>
-                        <phase>prepare-package</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
@@ -315,20 +344,32 @@
                 </executions>
             </plugin>
 
-            <!-- Unit tests plugin, to skip runing test add -Dmaven.test.skip -->
+            <!-- Unit tests plugin, to skip running test add -Dmaven.test.skip -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>-Xmx2048m ${surefireArgLine}</argLine><!-- Last argument is required for code coverage to work. -->
                     <runOrder>alphabetical</runOrder>
-                    <systemProperties>
-                        <property>
-                            <name>java.util.logging.config.file</name>
-                            <value>src/test/resources/logging.properties</value>
-                        </property>
-                    </systemProperties>
                 </configuration>
+            </plugin>
+
+            <!-- integration tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <runOrder>alphabetical</runOrder>
+                    <argLine>${failsafeArgLine}</argLine>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- Coveralls is a online code coverage tool, you can track code coverage here: https://coveralls.io/r/bitcoinj/bitcoinj -->
@@ -341,39 +382,6 @@
     </build>
 
     <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymock</artifactId>
-            <version>3.2</version>
-            <scope>test</scope>
-        </dependency>
-        <!-- bitcoinj consumers are expected to provide their own SLF4J adapters
-             such as logback, slf4j-log4j12, slf4j-jcl and so on
-             see http://www.slf4j.org/faq.html -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-            <version>1.7.20</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.5.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>1.3.167</version>
-            <optional>true</optional>
-        </dependency>
         <dependency>
             <groupId>com.madgag.spongycastle</groupId>
             <artifactId>core</artifactId>
@@ -404,17 +412,35 @@
             <artifactId>scrypt</artifactId>
             <version>1.4.0</version>
         </dependency>
-        <!-- Note this is an optional dependency: Postgres blockstore -->
-        <!-- To Test remove optional -->
         <dependency>
-          <groupId>postgresql</groupId>
-          <artifactId>postgresql</artifactId>
-          <version>9.1-901.jdbc4</version>
-          <optional>true</optional>
+            <groupId>org.bitcoinj</groupId>
+            <artifactId>orchid</artifactId>
+            <version>1.2.1</version>
         </dependency>
-        <!-- Note this is an optional dependency: MySQL blockstore -->
-        <!-- To Test remove optional -->
         <dependency>
+            <groupId>com.squareup.okhttp</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>2.7.2</version>
+        </dependency>
+
+        <!-- optional dependencies -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.3.167</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <!-- Note this is an optional dependency: Postgres blockstore -->
+            <!-- To Test remove optional -->
+            <groupId>postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>9.1-901.jdbc4</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <!-- Note this is an optional dependency: MySQL blockstore -->
+            <!-- To Test remove optional -->
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>5.1.33</version>
@@ -426,16 +452,31 @@
             <version>1.8</version>
             <optional>true</optional>
         </dependency>
+
+        <!-- test dependencies -->
         <dependency>
-            <groupId>org.bitcoinj</groupId>
-            <artifactId>orchid</artifactId>
-            <version>1.2.1</version>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.squareup.okhttp</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>2.7.2</version>
+            <groupId>org.easymock</groupId>
+            <artifactId>easymock</artifactId>
+            <version>3.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.5.2</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>
