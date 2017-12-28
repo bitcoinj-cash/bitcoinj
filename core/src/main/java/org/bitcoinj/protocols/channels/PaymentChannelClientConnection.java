@@ -104,7 +104,7 @@ public class PaymentChannelClientConnection {
 
     /**
      * Attempts to open a new connection to and open a payment channel with the given host and port, blocking until the
-     * connection is open.  The server is requested to keep the channel open for {@param timeWindow}
+     * connection is open.  The server is requested to keep the channel open for {@code timeWindow}
      * seconds. If the server proposes a longer time the channel will be closed.
      *
      * @param server          The host/port pair where the server is listening.
@@ -134,7 +134,7 @@ public class PaymentChannelClientConnection {
 
     /**
      * Attempts to open a new connection to and open a payment channel with the given host and port, blocking until the
-     * connection is open.  The server is requested to keep the channel open for {@param timeWindow}
+     * connection is open.  The server is requested to keep the channel open for {@code timeWindow}
      * seconds. If the server proposes a longer time the channel will be closed.
      *
      * @param server The host/port pair where the server is listening.

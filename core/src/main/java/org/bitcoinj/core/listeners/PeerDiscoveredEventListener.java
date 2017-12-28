@@ -25,7 +25,7 @@ import java.util.Set;
  */
 public interface PeerDiscoveredEventListener {
     /**
-     * <p>Called when peers are discovered, this happens at startup of {@link PeerGroup} or if we run out of
+     * <p>Called when peers are discovered, this happens at startup of {@link org.bitcoinj.core.PeerGroup} or if we run out of
      * suitable {@link Peer}s to connect to.</p>
      *
      * @param peerAddresses the set of discovered {@link PeerAddress}es
