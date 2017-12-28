@@ -21,12 +21,12 @@ import org.bitcoinj.store.FullPrunedBlockStore;
 import org.bitcoinj.store.MySQLFullPrunedBlockStore;
 import org.junit.After;
 import org.junit.Ignore;
+import org.junit.Test;
 
 /**
- * A MySQL implementation of the {@link AbstractFullPrunedBlockChainTest}
+ * A MySQL implementation of the {@link AbstractFullPrunedBlockChainIT}
  */
-@Ignore("enable the mysql driver dependency in the maven POM")
-public class MySQLFullPrunedBlockChainTest extends AbstractFullPrunedBlockChainTest {
+public class MySQLFullPrunedBlockChainIT extends AbstractFullPrunedBlockChainIT {
 
     @After
     public void tearDown() throws Exception {
@@ -48,5 +48,12 @@ public class MySQLFullPrunedBlockChainTest extends AbstractFullPrunedBlockChainT
     @Override
     public void resetStore(FullPrunedBlockStore store) throws BlockStoreException {
         ((MySQLFullPrunedBlockStore)store).resetStore();
+    }
+
+    @Override
+    @Test
+    @Ignore("causes error on travis MySQL - redo log not big enough")
+    // The size of BLOB/TEXT data inserted in one transaction is greater than 10% of redo log size. Increase the redo log size using innodb_log_file_size.
+    public void testGeneratedChain() {
     }
 }

@@ -3,13 +3,31 @@ sudo: false
 dist: trusty
 language: java
 jdk: oraclejdk8
-install: true # remove default
+addons:
+  postgresql: "9.3"   # min supported version
+cache:
+  directories:
+  - $HOME/.m2
+
+services:
+  - mysql
+
+install: true   # disable default because no need to do the mvn install before mvn verify
+
+before_script:
+  - psql -c "create user bitcoinj with password 'password';" -U postgres
+  - psql -c 'create database bitcoinj_test owner bitcoinj;' -U postgres
+  - mysql -e 'CREATE DATABASE bitcoinj_test;'
+  - mysql -e "grant all PRIVILEGES on bitcoinj_test.* to 'bitcoinj' identified by 'password';"
+  - mysql -e 'SET GLOBAL max_allowed_packet=20971520;'
+
 script:
-  - mvn -q clean install -Pno-network
-  - jdk_switcher use openjdk7
-  - cd core
-  - mvn -q clean package -Pno-network
+  - mvn verify -Ptravis -Dmaven.javadoc.skip=true
+# to run one specific test - in this case only testFirst100kBlocksWithCustomSchema test in PostgresFullPrunedBlockChainIT class
+#  - mvn clean verify -Ptravis -Dmaven.javadoc.skip=true -Dit.test=PostgresFullPrunedBlockChainIT#testFirst100kBlocksWithCustomSchema -Dtest=nothing -DfailIfNoTests=false
+# run only mysql integration tests
+#  - mvn clean verify -Ptravis -Dmaven.javadoc.skip=true -Dit.test=MySQLFullPrunedBlockChainIT -Dtest=nothing -DfailIfNoTests=false
 
 after_success:
-  - cd ../core
+  - cd core
   - mvn jacoco:report coveralls:report
