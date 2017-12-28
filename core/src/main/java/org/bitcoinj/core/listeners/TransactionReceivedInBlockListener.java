@@ -44,7 +44,7 @@ public interface TransactionReceivedInBlockListener {
                           BlockChain.NewBlockType blockType,
                           int relativityOffset) throws VerificationException;
     /**
-     * <p>Called by the {@link BlockChain} when we receive a new {@link FilteredBlock} that contains the given
+     * <p>Called by the {@link BlockChain} when we receive a new {@link org.bitcoinj.core.FilteredBlock} that contains the given
      * transaction hash in its merkle tree.</p>
      *
      * <p>A transaction may be received multiple times if is included into blocks in parallel chains. The blockType
