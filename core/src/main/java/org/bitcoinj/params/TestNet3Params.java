@@ -17,18 +17,13 @@
 
 package org.bitcoinj.params;
 
-import java.math.BigInteger;
-import java.util.Date;
-
-import com.google.common.base.Preconditions;
-import org.bitcoinj.core.AbstractBlockChain;
-import org.bitcoinj.core.Block;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.core.Utils;
-import org.bitcoinj.core.VerificationException;
+import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
+
+import com.google.common.base.Preconditions;
+import java.math.BigInteger;
+import java.util.Date;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -76,7 +71,8 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
 
         // Aug, 1 hard fork
         uahfHeight = 1155876;
-
+        // Nov, 13 hard fork
+        daaUpdateHeight = 1188697;
         /** Activation time at which the cash HF kicks in. */
         cashHardForkActivationTime = 1510600000;
         daaHeight = 1188697;
@@ -98,10 +94,14 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
     // February 16th 2012
     private static final Date testnetDiffDate = new Date(1329264000000L);
 
+    public static boolean isValidTestnetDateBlock(Block block){
+        return block.getTime().after(testnetDiffDate);
+    }
+
     @Override
     public void checkDifficultyTransitions(final StoredBlock storedPrev, final Block nextBlock,
                                            final BlockStore blockStore, AbstractBlockChain blockChain) throws VerificationException, BlockStoreException {
-        if (storedPrev.getHeight() < daaHeight && !isDifficultyTransitionPoint(storedPrev) && nextBlock.getTime().after(testnetDiffDate)) {
+        if (!isDifficultyTransitionPoint(storedPrev, this) && nextBlock.getTime().after(testnetDiffDate)) {
             Block prev = storedPrev.getHeader();
 
             // After 15th February 2012 the rules on the testnet change to avoid people running up the difficulty

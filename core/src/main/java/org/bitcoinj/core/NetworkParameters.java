@@ -18,24 +18,24 @@
 package org.bitcoinj.core;
 
 import com.google.common.base.Objects;
-import org.bitcoinj.core.Block;
-import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.core.VerificationException;
-import org.bitcoinj.net.discovery.*;
+import org.bitcoinj.net.discovery.HttpDiscovery;
 import org.bitcoinj.params.*;
-import org.bitcoinj.script.*;
+import org.bitcoinj.script.Script;
+import org.bitcoinj.script.ScriptOpCodes;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
-
 import org.bitcoinj.utils.MonetaryFormat;
-
-import javax.annotation.*;
-import java.io.*;
-import java.math.*;
-import java.util.*;
-
-import static org.bitcoinj.core.Coin.*;
 import org.bitcoinj.utils.VersionTally;
+
+import javax.annotation.Nullable;
+import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.bitcoinj.core.Coin.COIN;
+import static org.bitcoinj.core.Coin.FIFTY_COINS;
 
 /**
  * <p>NetworkParameters contains the data needed for working with an instantiation of a Bitcoin chain.</p>
@@ -87,6 +87,11 @@ public abstract class NetworkParameters {
     protected int majorityEnforceBlockUpgrade;
     protected int majorityRejectBlockOutdated;
     protected int majorityWindow;
+
+    // Aug, 1 hard fork
+    protected int uahfHeight;
+    // Nov, 13 hard fork
+    protected int daaUpdateHeight;
 
     /**
      * See getId(). This may be null for old deserialized wallets. In that case we derive it heuristically
@@ -390,6 +395,10 @@ public abstract class NetworkParameters {
         return bip32HeaderPriv;
     }
 
+    public int getDAAUpdateHeight(){
+        return daaUpdateHeight;
+    }
+
     /**
      * Returns the number of coins that will be produced in total, on this
      * network. Where not applicable, a very large number of coins is returned
@@ -421,8 +430,8 @@ public abstract class NetworkParameters {
     public abstract boolean hasMaxMoney();
 
     /**
-     * the default {@link MessageSerializer} for this network. This is a shared serializer.
-     * @return the default {@link MessageSerializer} for this network. This is a shared serializer.
+     * Return the default serializer for this network. This is a shared serializer.
+     * @return 
      */
     public final MessageSerializer getDefaultSerializer() {
         // Construct a default serializer if we don't have one
@@ -448,7 +457,7 @@ public abstract class NetworkParameters {
     public abstract BitcoinSerializer getSerializer(boolean parseRetain);
 
     /**
-     * The number of blocks in the last {@link #getMajorityWindow()} blocks
+     * The number of blocks in the last {@link getMajorityWindow()} blocks
      * at which to trigger a notice to the user to upgrade their client, where
      * the client does not understand those blocks.
      */
@@ -457,7 +466,7 @@ public abstract class NetworkParameters {
     }
 
     /**
-     * The number of blocks in the last {@link #getMajorityWindow()} blocks
+     * The number of blocks in the last {@link getMajorityWindow()} blocks
      * at which to enforce the requirement that all new blocks are of the
      * newer type (i.e. outdated blocks are rejected).
      */
@@ -519,6 +528,25 @@ public abstract class NetworkParameters {
         }
 
         return verifyFlags;
+    }
+
+    public void verifyDifficulty(BigInteger newTarget, Block nextBlock)
+    {
+        if (newTarget.compareTo(this.getMaxTarget()) > 0) {
+            newTarget = this.getMaxTarget();
+        }
+
+        int accuracyBytes = (int) (nextBlock.getDifficultyTarget() >>> 24) - 3;
+        long receivedTargetCompact = nextBlock.getDifficultyTarget();
+
+        // The calculated difficulty is to a higher precision than received, so reduce here.
+        BigInteger mask = BigInteger.valueOf(0xFFFFFFL).shiftLeft(accuracyBytes * 8);
+        newTarget = newTarget.and(mask);
+        long newTargetCompact = Utils.encodeCompactBits(newTarget);
+
+        if (newTargetCompact != receivedTargetCompact)
+            throw new VerificationException("Network provided difficulty bits do not match what was calculated: " +
+                    Long.toHexString(newTargetCompact) + " vs " + Long.toHexString(receivedTargetCompact));
     }
 
     public abstract int getProtocolVersionNum(final ProtocolVersion version);

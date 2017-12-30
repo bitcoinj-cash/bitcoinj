@@ -17,12 +17,10 @@
 
 package org.bitcoinj.params;
 
-import org.bitcoinj.core.*;
-import org.bitcoinj.net.discovery.*;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.Utils;
 
-import java.net.*;
-
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Parameters for the main production network on which people trade goods and services.
@@ -132,10 +130,10 @@ public class MainNetParams extends AbstractBitcoinNetParams {
 
         // Aug, 1 hard fork
         uahfHeight = 478559;
-        // Activation time at which the cash HF kicks in.
+        // Nov, 13 hard fork
+        daaUpdateHeight = 504031;
+        /** Activation time at which the cash HF kicks in. */
         cashHardForkActivationTime = 1510600000;
-        // Nov 13 protocol upgrade
-        daaHeight = 504031;
     }
 
     private static MainNetParams instance;
