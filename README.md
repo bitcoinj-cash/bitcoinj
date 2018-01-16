@@ -71,3 +71,6 @@ Contributions to Bitcoinj Cash are welcome and encouraged.
 * release branches are named `cash-<version>`
 * Travis-CI is [here](https://travis-ci.org/bitcoinj-cash/bitcoinj)
 * Coveralls test coverage report is [here](https://coveralls.io/github/bitcoinj-cash/bitcoinj)
+
+The project's BCH donation address is: 1M6GwE9ddu8S6tvYE1qbAnqeG3CM1UaVvP
+Do NOT send BTC to this address, only BCH! Any funds donated will be used for bug or feature bounties.
