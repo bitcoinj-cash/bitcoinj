@@ -55,8 +55,6 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
         majorityRejectBlockOutdated = 4;
         majorityWindow = 7;
 
-        // support for legacy tests - dont test BCH 2017-11-13 hardfork by default
-        cashHardForkActivationTime = (System.currentTimeMillis()/1000)+24*60*60;
         // Nov, 13 hard fork
         daaUpdateHeight = 1000000;
     }

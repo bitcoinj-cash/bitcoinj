@@ -132,8 +132,6 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         uahfHeight = 478559;
         // Nov, 13 hard fork
         daaUpdateHeight = 504031;
-        /** Activation time at which the cash HF kicks in. */
-        cashHardForkActivationTime = 1510600000;
     }
 
     private static MainNetParams instance;
