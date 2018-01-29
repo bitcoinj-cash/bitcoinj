@@ -53,6 +53,14 @@ pipeline {
             }
         }
 
+        stage('SonarQube analysis') {
+            steps {
+                withSonarQubeEnv('SonarCloud') {
+                    sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.2:sonar -Dsonar.organization=bitcoinj-cash'
+                }
+            }
+        }
+
         // test syncing with testnet
         stage('test testnet sync') {
             steps {
@@ -75,6 +83,7 @@ pipeline {
     post {
         always {
             junit '**/target/*-reports/*.xml'
+            jacoco(execPattern: '**/target/jacoco.exec')
         }
         success {
             archive '**/target/*.jar'
