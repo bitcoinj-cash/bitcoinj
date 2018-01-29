@@ -16,7 +16,8 @@
 // Jenkins integration tests for BitcoinJ Cash
 
 // tested with Jenkins v2.89.3
-// required plugins: ansiColor
+// required plugins: ansiColor, jaCoCo
+// for central jenkins, also need SonarQube scanner plugin
 
 pipeline {
     agent {
@@ -53,13 +54,12 @@ pipeline {
             }
         }
 
-        stage('SonarQube analysis') {
-            steps {
-                withSonarQubeEnv('SonarCloud') {
-                    sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.2:sonar -Dsonar.organization=bitcoinj-cash'
-                }
-            }
-        }
+
+        /*
+         *
+         * various integration tests
+         *
+         */
 
         // test syncing with testnet
         stage('test testnet sync') {
@@ -75,6 +75,26 @@ pipeline {
             steps {
                 timeout(time: 5, unit:'MINUTES') {
                     sh 'jenkins/tests/sync-chain -n MAIN'
+                }
+            }
+        }
+
+
+        /*
+         *
+         * other reporting & analysis
+         *
+         */
+
+        // perform SonarQube, but only for main dev branch and main repo
+        stage('SonarQube analysis') {
+            when {
+                branch 'cash'
+                environment name: 'GIT_URL', value: 'https://github.com/bitcoinj-cash/bitcoinj.git'
+            }
+            steps {
+                withSonarQubeEnv('SonarCloud') {
+                    sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.2:sonar -Dsonar.organization=bitcoinj-cash'
                 }
             }
         }
