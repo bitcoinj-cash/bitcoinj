@@ -50,6 +50,10 @@
         </developer>
     </developers>
 
+    <properties>
+        <sonar.exclusions>**/*Protos.java,**/ClientState.java,**/ServerState.java</sonar.exclusions>
+    </properties>
+
     <profiles>
         <profile>
             <id>dev</id> <!-- default profile -->
@@ -66,6 +70,7 @@
                                 <!-- exclude postgres and mysql tests, these need environment setup -->
                                 <exclude>**/PostgresFullPrunedBlockChainIT.java</exclude>
                                 <exclude>**/MySQLFullPrunedBlockChainIT.java</exclude>
+                                <skipTests>${skipIntegrationTests}</skipTests>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -124,6 +129,7 @@
                                 <exclude>**/core/PeerTest.java</exclude>
                                 <exclude>**/core/TransactionBroadcastTest.java</exclude>
                             </excludes>
+                            <skipTests>${skipUnitTests}</skipTests>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -351,6 +357,7 @@
                 <configuration>
                     <argLine>-Xmx2048m ${surefireArgLine}</argLine><!-- Last argument is required for code coverage to work. -->
                     <runOrder>alphabetical</runOrder>
+                    <skipTests>${skipUnitTests}</skipTests>
                 </configuration>
             </plugin>
 
@@ -361,6 +368,7 @@
                 <configuration>
                     <runOrder>alphabetical</runOrder>
                     <argLine>${failsafeArgLine}</argLine>
+                    <skipTests>${skipIntegrationTests}</skipTests>
                 </configuration>
                 <executions>
                     <execution>
