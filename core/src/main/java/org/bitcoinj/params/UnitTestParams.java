@@ -57,6 +57,7 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
 
         // Nov, 13 hard fork
         daaUpdateHeight = 1000000;
+        cashAddrPrefix = "bchtest";
     }
 
     private static UnitTestParams instance;
