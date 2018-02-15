@@ -18,6 +18,9 @@
 package org.bitcoinj.params;
 
 import java.math.BigInteger;
+import org.bitcoinj.core.Block;
+import org.bitcoinj.core.Utils;
+
 import java.util.Date;
 
 import com.google.common.base.Preconditions;
@@ -76,10 +79,10 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
 
         // Aug, 1 hard fork
         uahfHeight = 1155876;
-
-        /** Activation time at which the cash HF kicks in. */
+        // Activation time at which the cash HF kicks in.
         cashHardForkActivationTime = 1510600000;
         daaHeight = 1188697;
+        cashAddrPrefix = "bchtest";
     }
 
     private static TestNet3Params instance;

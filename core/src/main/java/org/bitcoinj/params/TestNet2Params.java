@@ -62,6 +62,7 @@ public class TestNet2Params extends AbstractBitcoinNetParams {
         /** Activation time at which the cash HF kicks in. */
         cashHardForkActivationTime = 1510600000;
         daaHeight = 1188697;
+        cashAddrPrefix = "bchtest";
     }
 
     private static TestNet2Params instance;

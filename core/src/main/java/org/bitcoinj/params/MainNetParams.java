@@ -136,6 +136,7 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         cashHardForkActivationTime = 1510600000;
         // Nov 13 protocol upgrade
         daaHeight = 504031;
+        cashAddrPrefix = "bitcoincash";
     }
 
     private static MainNetParams instance;

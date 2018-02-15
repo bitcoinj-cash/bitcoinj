@@ -46,6 +46,9 @@ public class RegTestParams extends TestNet2Params {
         uahfHeight = 0;
         // Nov, 13 hard fork is always on on regtest.
         cashHardForkActivationTime = 0;
+        // Nov, 13 hard fork
+        daaHeight = 0;
+        cashAddrPrefix = "bchreg";
     }
 
     @Override

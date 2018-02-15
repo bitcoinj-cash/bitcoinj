@@ -18,14 +18,13 @@
 
 package org.bitcoinj.core;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-
 import org.bitcoinj.params.Networks;
 import org.bitcoinj.script.Script;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -172,7 +171,7 @@ public class Address extends VersionedChecksummedBytes {
     /**
      * Check if a given address version is valid given the NetworkParameters.
      */
-    private static boolean isAcceptableVersion(NetworkParameters params, int version) {
+    public static boolean isAcceptableVersion(NetworkParameters params, int version) {
         for (int v : params.getAcceptableAddressCodes()) {
             if (version == v) {
                 return true;
