@@ -46,6 +46,7 @@ public class RegTestParams extends TestNet2Params {
         uahfHeight = 0;
         // Nov, 13 hard fork
         daaUpdateHeight = 0;
+        cashAddrPrefix = "bchreg";
     }
 
     @Override
