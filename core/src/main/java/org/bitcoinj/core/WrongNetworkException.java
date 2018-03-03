@@ -35,4 +35,10 @@ public class WrongNetworkException extends AddressFormatException {
         this.verCode = verCode;
         this.acceptableVersions = acceptableVersions;
     }
+
+    public WrongNetworkException(String prefix, String acceptablePrefix)
+    {
+        super("Prefix of address did not match acceptable prefix for network: " + prefix + " not " +
+                acceptablePrefix);
+    }
 }

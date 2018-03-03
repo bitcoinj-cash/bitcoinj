@@ -81,4 +81,12 @@ public class CashAddress extends Address {
     public Address clone() throws CloneNotSupportedException {
         return super.clone();
     }
+
+    public static NetworkParameters getParametersFromAddress(String address) throws AddressFormatException {
+        try {
+            return CashAddressFactory.create().getFromFormattedAddress(null, address).getParameters();
+        } catch (WrongNetworkException e) {
+            throw new RuntimeException(e);  // Cannot happen.
+        }
+    }
 }

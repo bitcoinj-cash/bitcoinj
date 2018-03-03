@@ -15,23 +15,25 @@
  */
 package org.bitcoinj.core;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.params.TestNet3Params;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * Created by Hash Engineering Soltuions on 1/19/2018.
+ * Created by Hash Engineering Solutions on 1/19/2018.
  */
 public class CashAddressTest {
 
@@ -43,10 +45,9 @@ public class CashAddressTest {
     @BeforeClass
     public static void loadAddressBatch() throws IOException {
         ClassLoader classLoader = CashAddressTest.class.getClassLoader();
-        File file = new File(classLoader.getResource(ADDRESSES_FILE_PATH).getFile());
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line;
-        while ((line = reader.readLine()) != null) {
+        URL url = classLoader.getResource(ADDRESSES_FILE_PATH);
+        List<String> lines = Resources.readLines(url, Charsets.UTF_8);
+        for (String line : lines) {
             String[] components = line.split(",");
             CASH_ADDRESS_BY_LEGACY_FORMAT.put(components[0], components[1]);
         }
@@ -59,12 +60,27 @@ public class CashAddressTest {
 
     @Test
     public void testPrefixDoesNotMatchWithChecksum() {
+        NetworkParameters params = TestNet3Params.get();
+        String plainAddress = "bchtest:qpk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h";
+        try {
+            cashAddressFactory.getFromFormattedAddress(params, plainAddress);
+            fail("Exception expected but didn't happen");
+        } catch (AddressFormatException ignored) {
+            if(!ignored.getMessage().contains("Invalid Checksum"))
+                fail();
+        }
+    }
+
+    @Test
+    public void testPrefixDoesNotMatchNetwork() {
         NetworkParameters params = MainNetParams.get();
         String plainAddress = "bchtest:qpk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h";
         try {
             cashAddressFactory.getFromFormattedAddress(params, plainAddress);
             fail("Exception expected but didn't happen");
         } catch (AddressFormatException ignored) {
+            if(!ignored.getMessage().contains("bchtest not bitcoincash"))
+                fail();
         }
     }
 
