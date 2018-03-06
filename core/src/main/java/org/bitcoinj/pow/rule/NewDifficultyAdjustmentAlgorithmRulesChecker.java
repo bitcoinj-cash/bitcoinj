@@ -69,7 +69,11 @@ public class NewDifficultyAdjustmentAlgorithmRulesChecker extends AbstractPowRul
         StoredBlock blocks[] = new StoredBlock[3];
         blocks[2] = pindex;
         blocks[1] = pindex.getPrev(blockStore);
+        if(blocks[1] == null)
+            throw new BlockStoreException("Not enough blocks in blockStore to calculate difficulty");
         blocks[0] = blocks[1].getPrev(blockStore);
+        if(blocks[0] == null)
+            throw new BlockStoreException("Not enough blocks in blockStore to calculate difficulty");
 
         // Sorting network.
         if (blocks[0].getHeader().getTimeSeconds() > blocks[2].getHeader().getTimeSeconds()) {
