@@ -67,7 +67,7 @@ public class CashAddressFactory {
             throws AddressFormatException {
         String addressPrefix = CashAddressHelper.getPrefix(addr);
         if (params != null) {
-            if (!isAcceptablePrefix(params, addressPrefix)) {
+            if (addressPrefix != null && !isAcceptablePrefix(params, addressPrefix)) {
                 throw new WrongNetworkException(addressPrefix, params.getCashAddrPrefix());
             }
         } else {
