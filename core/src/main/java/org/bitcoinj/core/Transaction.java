@@ -845,11 +845,48 @@ public class Transaction extends ChildMessage {
     }
 
     /**
+     * Adds a new and fully signed input for the given parameters. Note that this method is <b>not</b> thread safe
+     * and requires external synchronization. Please refer to general documentation on Bitcoin scripting and contracts
+     * to understand the values of sigHash and anyoneCanPay: otherwise you can use the other form of this method
+     * that sets them to typical defaults.  The amount parameter is used instead of prevOut.getConnectedOutput().getValue().
+     *
+     * @throws ScriptException if the scriptPubKey is not a pay to address or pay to pubkey script.
+     */
+    public TransactionInput addSignedInput(TransactionOutPoint prevOut, Coin amount, Script scriptPubKey, ECKey sigKey,
+                                           SigHash sigHash, boolean anyoneCanPay, boolean forkId) throws ScriptException {
+        // Verify the API user didn't try to do operations out of order.
+        checkState(!outputs.isEmpty(), "Attempting to sign tx without outputs.");
+        TransactionInput input = new TransactionInput(params, this, new byte[]{}, prevOut);
+        addInput(input);
+        Sha256Hash hash = forkId ?
+                hashForSignatureWitness(inputs.size() -1, scriptPubKey, amount, sigHash, anyoneCanPay) :
+                hashForSignature(inputs.size() - 1, scriptPubKey, sigHash, anyoneCanPay);
+
+        ECKey.ECDSASignature ecSig = sigKey.sign(hash);
+        TransactionSignature txSig = new TransactionSignature(ecSig, sigHash, anyoneCanPay, forkId);
+        if (scriptPubKey.isSentToRawPubKey())
+            input.setScriptSig(ScriptBuilder.createInputScript(txSig));
+        else if (scriptPubKey.isSentToAddress())
+            input.setScriptSig(ScriptBuilder.createInputScript(txSig, sigKey));
+        else
+            throw new ScriptException("Don't know how to sign for this kind of scriptPubKey: " + scriptPubKey);
+        return input;
+    }
+
+    /**
      * Same as {@link #addSignedInput(TransactionOutPoint, org.bitcoinj.script.Script, ECKey, org.bitcoinj.core.Transaction.SigHash, boolean)}
      * but defaults to {@link SigHash#ALL} and "false" for the anyoneCanPay flag. This is normally what you want.
      */
     public TransactionInput addSignedInput(TransactionOutPoint prevOut, Script scriptPubKey, ECKey sigKey) throws ScriptException {
         return addSignedInput(prevOut, scriptPubKey, sigKey, SigHash.ALL, false);
+    }
+
+    /**
+     * Same as {@link #addSignedInput(TransactionOutPoint, Coin, org.bitcoinj.script.Script, ECKey, org.bitcoinj.core.Transaction.SigHash, boolean, boolean)}
+     * but defaults to {@link SigHash#ALL} and "false" for the anyoneCanPay flag. This is normally what you want.
+     */
+    public TransactionInput addSignedInput(TransactionOutPoint prevOut, Coin amount, Script scriptPubKey, ECKey sigKey) throws ScriptException {
+        return addSignedInput(prevOut, amount, scriptPubKey, sigKey, SigHash.ALL, false, true);
     }
 
     /**
@@ -862,10 +899,26 @@ public class Transaction extends ChildMessage {
 
     /**
      * Adds an input that points to the given output and contains a valid signature for it, calculated using the
+     * signing key.  Assumes forkId is true for {@link #addSignedInput(TransactionOutPoint, Coin, Script, ECKey)}
+     */
+    public TransactionInput addSignedInput(TransactionOutput output, Coin amount, ECKey signingKey) {
+        return addSignedInput(output.getOutPointFor(), amount, output.getScriptPubKey(), signingKey);
+    }
+
+    /**
+     * Adds an input that points to the given output and contains a valid signature for it, calculated using the
      * signing key.
      */
     public TransactionInput addSignedInput(TransactionOutput output, ECKey signingKey, SigHash sigHash, boolean anyoneCanPay) {
         return addSignedInput(output.getOutPointFor(), output.getScriptPubKey(), signingKey, sigHash, anyoneCanPay);
+    }
+
+    /**
+     * Adds an input that points to the given output and contains a valid signature for it, calculated using the
+     * signing key.  Assumes forkId is true (sign using Bitcoin Cash Signature)
+     */
+    public TransactionInput addSignedInput(TransactionOutput output, Coin amount, ECKey signingKey, SigHash sigHash, boolean anyoneCanPay) {
+        return addSignedInput(output.getOutPointFor(), amount, output.getScriptPubKey(), signingKey, sigHash, anyoneCanPay, true);
     }
 
     /**
