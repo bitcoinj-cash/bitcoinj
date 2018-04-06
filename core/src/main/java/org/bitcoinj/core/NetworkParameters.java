@@ -88,6 +88,9 @@ public abstract class NetworkParameters {
     protected int majorityRejectBlockOutdated;
     protected int majorityWindow;
 
+    // May, 15 2018 hard fork
+    protected long monolithActivationTime = 1526400000L;
+
     /**
      * See getId(). This may be null for old deserialized wallets. In that case we derive it heuristically
      * by looking at the port number.
