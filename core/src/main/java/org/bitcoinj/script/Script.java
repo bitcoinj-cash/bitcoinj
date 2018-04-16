@@ -72,7 +72,7 @@ public class Script {
         LOW_S, // Passing a non-strict-DER signature or one with S > order/2 to a checksig operation causes script failure
         NULLDUMMY, // Verify dummy stack item consumed by CHECKMULTISIG is of zero-length.
         SIGPUSHONLY, // Using a non-push operator in the scriptSig causes script failure (softfork safe, BIP62 rule 2).
-        MINIMALDATA, // Require minimal encodings for all push operations
+        MINIMALDATA, // Require minimal encodings for all push operations and number encodings
         DISCOURAGE_UPGRADABLE_NOPS, // Discourage use of NOPs reserved for upgrades (NOP1-10)
         CLEANSTACK, // Require that only a single stack element remains after evaluation.
         CHECKLOCKTIMEVERIFY, // Enable CHECKLOCKTIMEVERIFY operation
@@ -83,6 +83,7 @@ public class Script {
 
     private static final Logger log = LoggerFactory.getLogger(Script.class);
     public static final long MAX_SCRIPT_ELEMENT_SIZE = 520;  // bytes
+    public static final int DEFAULT_MAX_NUM_ELEMENT_SIZE = 4;
     public static final int SIG_SIZE = 75;
     /** Max number of sigops allowed in a standard p2sh redeem script */
     public static final int MAX_P2SH_SIGOPS = 15;
@@ -810,9 +811,13 @@ public class Script {
      * @throws ScriptException if the chunk is longer than 4 bytes.
      */
     private static BigInteger castToBigInteger(byte[] chunk) throws ScriptException {
-        if (chunk.length > 4)
+        if (chunk.length > DEFAULT_MAX_NUM_ELEMENT_SIZE)
             throw new ScriptException("Script attempted to use an integer larger than 4 bytes");
-        return Utils.decodeMPI(Utils.reverseBytes(chunk), false);
+        if (!Utils.checkMinimallyEncodedLE(chunk))
+            throw new ScriptException("Number is not minimally encoded");
+        //numbers on the stack or stored LE so convert as MPI requires BE.
+        byte[] bytesBE = Utils.reverseBytes(chunk);
+        return Utils.decodeMPI(bytesBE, false);
     }
 
     /**
