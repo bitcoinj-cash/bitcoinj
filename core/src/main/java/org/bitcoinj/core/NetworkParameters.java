@@ -88,6 +88,10 @@ public abstract class NetworkParameters {
     protected int majorityRejectBlockOutdated;
     protected int majorityWindow;
 
+    public long getMonolithActivationTime() {
+        return monolithActivationTime;
+    }
+
     // May, 15 2018 hard fork
     protected long monolithActivationTime = 1526400000L;
 
