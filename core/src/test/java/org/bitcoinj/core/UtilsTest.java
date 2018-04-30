@@ -20,6 +20,7 @@ package org.bitcoinj.core;
 import java.math.BigInteger;
 import java.util.Date;
 
+import com.google.common.io.BaseEncoding;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -60,5 +61,14 @@ public class UtilsTest {
     public void dateTimeFormat() {
         assertEquals("2014-11-16T10:54:33Z", Utils.dateTimeFormat(1416135273781L));
         assertEquals("2014-11-16T10:54:33Z", Utils.dateTimeFormat(new Date(1416135273781L)));
+    }
+
+    @Test
+    public void testReadUint32() {
+        assertEquals(Utils.readUint32(BaseEncoding.base16().decode("00000000"),0), 0L);
+        assertEquals(Utils.readUint32(BaseEncoding.base16().decode("FF000000"),0), (long)Math.pow(2,8)-1);
+        assertEquals(Utils.readUint32(BaseEncoding.base16().decode("FFFF0000"),0), (long)Math.pow(2,16)-1);
+        assertEquals(Utils.readUint32(BaseEncoding.base16().decode("FFFFFF00"),0), (long)Math.pow(2,24)-1);
+        assertEquals(Utils.readUint32(BaseEncoding.base16().decode("FFFFFFFF"),0), (long)Math.pow(2,32)-1);
     }
 }
