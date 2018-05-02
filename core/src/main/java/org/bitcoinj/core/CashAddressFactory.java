@@ -1,3 +1,18 @@
+/*
+ * Copyright 2018 bitcoinj-cash developers
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.bitcoinj.core;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -10,21 +25,36 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.bitcoinj.core.Address.isAcceptableVersion;
 import static org.bitcoinj.core.CashAddressHelper.ConvertBits;
 
+/**
+ * This is a factory class that creates CashAddress objects from several types of inputs.
+ */
 public class CashAddressFactory {
 
     public static CashAddressFactory create() {
         return new CashAddressFactory();
     }
 
+    /** Returns an Address that represents the given P2SH script hash. */
     public CashAddress fromP2SHHash(NetworkParameters params, byte[] hash160) {
         return new CashAddress(params, CashAddress.CashAddressType.Script, hash160);
     }
 
+    /** Returns an Address that represents the script hash extracted from the given scriptPubKey */
     public CashAddress fromP2SHScript(NetworkParameters params, Script scriptPubKey) {
         checkArgument(scriptPubKey.isPayToScriptHash(), "Not a P2SH script");
         return fromP2SHHash(params, scriptPubKey.getPubKeyHash());
     }
-
+    /**
+     * Construct an address from its Base58 representation.
+     * @param params
+     *            The expected NetworkParameters or null if you don't want validation.
+     * @param base58
+     *            The textual form of the address, such as "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL".
+     * @throws AddressFormatException
+     *             if the given base58 doesn't parse or the checksum is invalid
+     * @throws WrongNetworkException
+     *             if the given address is valid but for a different chain (eg testnet vs mainnet)
+     */
     public CashAddress getFromBase58(@Nullable NetworkParameters params, String base58)
             throws AddressFormatException {
         VersionedChecksummedBytes parsed = new VersionedChecksummedBytes(base58);
@@ -48,6 +78,17 @@ public class CashAddressFactory {
         return new CashAddress(addressParams, parsed.version, parsed.bytes);
     }
 
+    /**
+     * Construct an address from its cashaddr representation.
+     * @param params
+     *            The expected NetworkParameters or null if you don't want validation.
+     * @param addr
+     *            The textual form of the address, such as "bitcoincash:qpk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h".
+     * @throws AddressFormatException
+     *             if the given base58 doesn't parse or the checksum is invalid
+     * @throws WrongNetworkException
+     *             if the given address is valid but for a different chain (eg testnet vs mainnet)
+     */
     public CashAddress getFromFormattedAddress(@Nullable NetworkParameters params, String addr)
             throws AddressFormatException {
         String addressPrefix = CashAddressHelper.getPrefix(addr);
