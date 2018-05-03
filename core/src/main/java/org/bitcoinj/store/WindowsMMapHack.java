@@ -14,10 +14,10 @@
 
 package org.bitcoinj.store;
 
-import sun.misc.*;
-import sun.nio.ch.*;
-
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.*;
+
 
 /**
  * <p>This class knows how to force an mmap'd ByteBuffer to reliquish its file handles before it becomes garbage collected,
@@ -27,11 +27,27 @@ import java.nio.*;
  * happen when a user requests a "restore from seed" function, which involves deleting and recreating the chain file.
  * At some point we should stop using mmap in SPVBlockStore and we can then delete this class.</p>
  *
- * <p>It is a separate class to avoid hitting unknown imports when running on other JVMs.</p>
+ * <p>The direct invocation has been replaced with a pure reflection implementation as later versions of Sun JDK
+ * have moved the Cleaner class to the public API however the clean method is not needed with those versions so
+ * will throw an exception in this case which is suppressed.</p>
  */
 public class WindowsMMapHack {
+
     public static void forceRelease(MappedByteBuffer buffer) {
-        Cleaner cleaner = ((DirectBuffer) buffer).cleaner();
-        if (cleaner != null) cleaner.clean();
+        try {
+            Method cleanerMethod = ByteBuffer.class.getMethod("cleaner");
+            Object cleaner = cleanerMethod.invoke(buffer, new Object[]{});
+            if (cleaner != null) {
+                Method cleanMethod = cleaner.getClass().getMethod("clean");
+                cleanMethod.invoke(cleaner, new Object[]{});
+            }
+        } catch (NoSuchMethodException e) {
+            //expected when running java 9 or openJDK.  Calling the clean method is no longer
+            //supported on JDK > 9 as recent versions of windows no longer have this issue
+        } catch (IllegalAccessException e) {
+            //shouldn't happen as methods are public
+        } catch (InvocationTargetException e) {
+
+        }
     }
 }
