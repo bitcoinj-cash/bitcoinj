@@ -41,6 +41,7 @@ import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.stream.IntStream;
 
 import static org.bitcoinj.core.Utils.HEX;
 import static org.bitcoinj.script.ScriptOpCodes.OP_0;
@@ -123,7 +124,7 @@ public class ScriptTest {
         Script s = new Script(bytes);
         assertTrue(s.isSentToRawPubKey());
     }
-    
+
     @Test
     public void testCreateMultiSigInputScript() {
         // Setup transaction and signatures
@@ -226,7 +227,7 @@ public class ScriptTest {
     public void testOp0() {
         // Check that OP_0 doesn't NPE and pushes an empty stack frame.
         Transaction tx = new Transaction(PARAMS);
-        tx.addInput(new TransactionInput(PARAMS, tx, new byte[] {}));
+        tx.addInput(new TransactionInput(PARAMS, tx, new byte[]{}));
         Script script = new ScriptBuilder().smallNum(0).build();
 
         LinkedList<byte[]> stack = new LinkedList<byte[]>();
@@ -234,24 +235,57 @@ public class ScriptTest {
         assertEquals("OP_0 push length", 0, stack.get(0).length);
     }
 
+    static final int MAX_BITWISE_RANDOM_TESTS = 2000;
+
+    @Test
+    public void testBitwiseOneByteLength() throws IOException {
+        byte[] a = new byte[MAX_BITWISE_RANDOM_TESTS];
+        byte[] b = new byte[MAX_BITWISE_RANDOM_TESTS];
+        new Random(0).nextBytes(a); //using the same seed always generates the same byte array
+        new Random(1).nextBytes(b);
+
+        for (int x = 0 ; x < MAX_BITWISE_RANDOM_TESTS ; x++) {
+            Assert.assertEquals(generateAndExecuteBitwiseOneByteLengthScript(a[x], b[x], "AND"), a[x] & b[x]);
+            Assert.assertEquals(generateAndExecuteBitwiseOneByteLengthScript(a[x], b[x], "OR"), a[x] | b[x]);
+            Assert.assertEquals(generateAndExecuteBitwiseOneByteLengthScript(a[x], b[x], "XOR"), a[x] ^ b[x]);
+        }
+    }
+
+    private byte generateAndExecuteBitwiseOneByteLengthScript(byte a, byte b, String opcode) throws IOException {
+        String aHex = HEX.encode(new byte[]{a});
+        String bHex = HEX.encode(new byte[]{b});
+        Script script = parseScriptString("bytes(0x" + aHex + ") bytes(0x" + bHex + ") " + opcode);
+        LinkedList<byte[]> stack = new LinkedList<byte[]>();
+        EnumSet<VerifyFlag> verifyFlags = EnumSet.noneOf(VerifyFlag.class);
+        verifyFlags.add(VerifyFlag.MONOLITH_OPCODES);
+
+        Script.executeScript(new Transaction(PARAMS), 0, script, stack, Coin.ZERO, verifyFlags);
+
+        Assert.assertEquals("Stack size must be 1", stack.size(), 1);
+        return stack.peekLast()[0];
+    }
+
     private Script parseScriptString(String string) throws IOException {
         String[] words = string.split("[ \\t\\n]");
-        
+
         UnsafeByteArrayOutputStream out = new UnsafeByteArrayOutputStream();
 
-        for(String w : words) {
+        for (String w : words) {
             if (w.equals(""))
                 continue;
             if (w.matches("^-?[0-9]*$")) {
                 // Number
                 long val = Long.parseLong(w);
                 if (val >= -1 && val <= 16)
-                    out.write(Script.encodeToOpN((int)val));
+                    out.write(Script.encodeToOpN((int) val));
                 else
                     Script.writeBytes(out, Utils.reverseBytes(Utils.encodeMPI(BigInteger.valueOf(val), false)));
             } else if (w.matches("^0x[0-9a-fA-F]*$")) {
                 // Raw hex data, inserted NOT pushed onto stack:
                 out.write(HEX.decode(w.substring(2).toLowerCase()));
+            } else if (w.matches("^bytes\\(0x[0-9a-fA-F]*\\)$")) {
+                // Push raw hex data onto the stack, using pushdata1 or pushdata2 if needed
+                Script.writeBytes(out, HEX.decode(w.substring(8, w.length() - 1).toLowerCase()));
             } else if (w.length() >= 2 && w.startsWith("'") && w.endsWith("'")) {
                 // Single-quoted string, pushed as data. NOTE: this is poor-man's
                 // parsing, spaces/tabs/newlines in single-quoted strings won't work.
@@ -283,7 +317,7 @@ public class ScriptTest {
         }
         return flags;
     }
-    
+
     @Test
     public void dataDrivenValidScripts() throws Exception {
         JsonNode json = new ObjectMapper().readTree(new InputStreamReader(getClass().getResourceAsStream(
@@ -301,7 +335,7 @@ public class ScriptTest {
             }
         }
     }
-    
+
     @Test
     public void dataDrivenInvalidScripts() throws Exception {
         JsonNode json = new ObjectMapper().readTree(new InputStreamReader(getClass().getResourceAsStream(
@@ -320,7 +354,7 @@ public class ScriptTest {
             }
         }
     }
-    
+
     private Map<TransactionOutPoint, Script> parseScriptPubKeys(JsonNode inputs) throws IOException {
         Map<TransactionOutPoint, Script> scriptPubKeys = new HashMap<TransactionOutPoint, Script>();
         for (JsonNode input : inputs) {
@@ -432,15 +466,17 @@ public class ScriptTest {
         ScriptBuilder.createOutputScript(new ECKey()).getToAddress(PARAMS, false);
     }
 
-    /** Test encoding of zero, which should result in an opcode */
+    /**
+     * Test encoding of zero, which should result in an opcode
+     */
     @Test
     public void numberBuilderZero() {
         final ScriptBuilder builder = new ScriptBuilder();
 
         // 0 should encode directly to 0
         builder.number(0);
-        assertArrayEquals(new byte[] {
-            0x00         // Pushed data
+        assertArrayEquals(new byte[]{
+                0x00         // Pushed data
         }, builder.build().getProgram());
     }
 
@@ -449,8 +485,8 @@ public class ScriptTest {
         final ScriptBuilder builder = new ScriptBuilder();
 
         builder.number(5);
-        assertArrayEquals(new byte[] {
-            0x55         // Pushed data
+        assertArrayEquals(new byte[]{
+                0x55         // Pushed data
         }, builder.build().getProgram());
     }
 
@@ -461,9 +497,9 @@ public class ScriptTest {
         // at the start
 
         builder.number(0x524a);
-        assertArrayEquals(new byte[] {
-            0x02,             // Length of the pushed data
-            0x4a, 0x52        // Pushed data
+        assertArrayEquals(new byte[]{
+                0x02,             // Length of the pushed data
+                0x4a, 0x52        // Pushed data
         }, builder.build().getProgram());
 
         // Test the trimming code ignores zeroes in the middle
@@ -476,9 +512,9 @@ public class ScriptTest {
         // sign byte has to be added to the end for the signed encoding.
         builder = new ScriptBuilder();
         builder.number(0x8000);
-        assertArrayEquals(new byte[] {
-            0x03,             // Length of the pushed data
-            0x00, (byte) 0x80, 0x00  // Pushed data
+        assertArrayEquals(new byte[]{
+                0x03,             // Length of the pushed data
+                0x00, (byte) 0x80, 0x00  // Pushed data
         }, builder.build().getProgram());
     }
 
@@ -487,9 +523,9 @@ public class ScriptTest {
         // Check encoding of a negative value
         final ScriptBuilder builder = new ScriptBuilder();
         builder.number(-5);
-        assertArrayEquals(new byte[] {
-            0x01,        // Length of the pushed data
-            ((byte) 133) // Pushed data
+        assertArrayEquals(new byte[]{
+                0x01,        // Length of the pushed data
+                ((byte) 133) // Pushed data
         }, builder.build().getProgram());
     }
 
