@@ -208,10 +208,10 @@ public class Utils {
 
     /** Parse 4 bytes from the byte array (starting at the offset) as unsigned 32-bit integer in big endian format. */
     public static long readUint32BE(byte[] bytes, int offset) {
-        return ((bytes[offset] & 0xffl) << 24) |
+        return  ((bytes[offset] & 0xffl) << 24) |
                 ((bytes[offset + 1] & 0xffl) << 16) |
                 ((bytes[offset + 2] & 0xffl) << 8) |
-                (bytes[offset + 3] & 0xffl);
+                 (bytes[offset + 3] & 0xffl);
     }
 
     /** Parse 2 bytes from the byte array (starting at the offset) as unsigned 16-bit integer in big endian format. */
