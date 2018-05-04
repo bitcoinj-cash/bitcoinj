@@ -55,6 +55,35 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     }
 
     /**
+     * determines whether monolith upgrade is activated based on MTP
+     * @param storedPrev The previous stored block
+     * @param store BlockStore containing at least 11 blocks
+     * @param parameters The network parameters
+     * @return
+     */
+    public static boolean isMonolithEnabled(StoredBlock storedPrev, BlockStore store, NetworkParameters parameters) {
+        if (storedPrev.getHeight() < 524626) { //current height at time of writing, well below the activation block height
+            return false;
+        }
+        try {
+            long mtp = BlockChain.getMedianTimestampOfRecentBlocks(storedPrev, store);
+            return isMonolithEnabled(mtp, parameters);
+        } catch (BlockStoreException e) {
+            throw new RuntimeException("Cannot determine monolith activation without BlockStore");
+        }
+    }
+
+    /**
+     * determines whether monolith upgrade is activated based on the given MTP.  Useful for overriding MTP for testing.
+     * @param medianTimePast
+     * @param parameters The network parameters
+     * @return
+     */
+    public static boolean isMonolithEnabled(long medianTimePast, NetworkParameters parameters) {
+        return medianTimePast >= parameters.getMonolithActivationTime();
+    }
+
+    /**
      * The number that is one greater than the largest representable SHA-256
      * hash.
      */

@@ -86,10 +86,12 @@ public abstract class NetworkParameters {
     protected int majorityRejectBlockOutdated;
     protected int majorityWindow;
 
-    // Aug, 1 hard fork
+    // Aug, 1 2017 hard fork
     protected int uahfHeight;
-    // Nov, 13 hard fork
+    // Nov, 13 2017 hard fork
     protected int daaUpdateHeight;
+    // May, 15 2018 hard fork
+    protected long monolithActivationTime = 1526400000L;
 
     /**
      * See getId(). This may be null for old deserialized wallets. In that case we derive it heuristically
@@ -389,6 +391,11 @@ public abstract class NetworkParameters {
 
     public int getDAAUpdateHeight(){
         return daaUpdateHeight;
+    }
+
+    /** MTP activation time for May 15th, 2018 upgrade **/
+    public long getMonolithActivationTime() {
+        return monolithActivationTime;
     }
 
     /**
