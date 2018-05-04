@@ -254,7 +254,39 @@ public class Utils {
         BigInteger result = new BigInteger(buf);
         return isNegative ? result.negate() : result;
     }
-    
+
+    /**
+     * checks that LE encoded number is minimally represented.  That is that there are no leading zero bytes except in
+     * the case: if there's more than one byte and the most significant bit of the second-most-significant-byte is set it
+     * would conflict with the sign bit.
+     * @param bytesLE
+     * @param maxNumSize
+     * @return
+     */
+    public static boolean checkMinimallyEncodedLE(byte[] bytesLE) {
+
+        if (bytesLE.length > 0) {
+            // Check that the number is encoded with the minimum possible number
+            // of bytes.
+            //
+            // If the most-significant-byte - excluding the sign bit - is zero
+            // then we're not minimal. Note how this test also rejects the
+            // negative-zero encoding, 0x80.
+            if ((bytesLE[bytesLE.length - 1] & 0x7f) == 0) {
+                // One exception: if there's more than one byte and the most
+                // significant bit of the second-most-significant-byte is set it
+                // would conflict with the sign bit. An example of this case is
+                // +-255, which encode to 0xff00 and 0xff80 respectively.
+                // (big-endian).
+                if (bytesLE.length <= 1 || (bytesLE[bytesLE.length - 2] & 0x80) == 0) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     /**
      * MPI encoded numbers are produced by the OpenSSL BN_bn2mpi function. They consist of
      * a 4 byte big endian length field, followed by the stated number of bytes representing
