@@ -867,8 +867,6 @@ public class Script {
 
 
         switch (opcode) {
-            case OP_SPLIT:
-
             case OP_BIN2NUM:
             case OP_NUM2BIN:
 
@@ -883,6 +881,7 @@ public class Script {
                 return true;
 
             case OP_CAT:
+            case OP_SPLIT:
             case OP_AND:
             case OP_OR:
             case OP_XOR:
@@ -1176,6 +1175,35 @@ public class Script {
                     break;
 
                 case OP_SPLIT:
+                    if (stack.size() < 2)
+                        throw new ScriptException("Invalid stack operation.");
+
+                    BigInteger biSplitPos = castToBigInteger(stack.pollLast());
+
+                    //sanity check in case we aren't enforcing minimal number encoding
+                    //we will check that the biSplitPos value can be safely held in an int
+                    //before we cast it as BigInteger will behave similar to casting if the value
+                    //is greater than the target type can hold.
+                    BigInteger biMaxInt = BigInteger.valueOf((long) Integer.MAX_VALUE);
+                    if (biSplitPos.compareTo(biMaxInt) >= 0)
+                        throw new ScriptException("Invalid OP_SPLIT range.");
+
+                    int splitPos = biSplitPos.intValue();
+                    byte[] splitBytes = stack.pollLast();
+
+                    if (splitPos > splitBytes.length || splitPos < 0)
+                        throw new ScriptException("Invalid OP_SPLIT range.");
+
+                    byte[] splitOut1 = new byte[splitPos];
+                    byte[] splitOut2 = new byte[splitBytes.length - splitPos];
+
+                    System.arraycopy(splitBytes, 0, splitOut1, 0, splitPos);
+                    System.arraycopy(splitBytes, splitPos, splitOut2, 0, splitOut2.length);
+
+                    stack.addLast(splitOut1);
+                    stack.addLast(splitOut2);
+                    break;
+
                 case OP_NUM2BIN:
                 case OP_BIN2NUM:
                     throw new ScriptException("Attempted to use disabled Script Op.");
