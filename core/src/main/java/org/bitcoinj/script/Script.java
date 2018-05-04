@@ -875,11 +875,11 @@ public class Script {
                 case OP_INVERT:
                     return true;
                 case OP_AND:
-                    return true;
+                    return false;
                 case OP_OR:
-                    return true;
+                    return false;
                 case OP_XOR:
-                    return true;
+                    return false;
                 case OP_2MUL:
                     return true;
                 case OP_2DIV:
@@ -1193,10 +1193,54 @@ public class Script {
                     stack.add(Utils.reverseBytes(Utils.encodeMPI(BigInteger.valueOf(stack.getLast().length), false)));
                     break;
                 case OP_INVERT:
+                    throw new ScriptException("Attempted to use disabled Script Op.");
                 case OP_AND:
                 case OP_OR:
                 case OP_XOR:
-                    throw new ScriptException("Attempted to use disabled Script Op.");
+                    // (x1 x2 - out)
+                    if (stack.size() < 2) {
+                        throw new ScriptException("Invalid stack operation.");
+                    }
+
+                    //valtype &vch1 = stacktop(-2);
+                    //valtype &vch2 = stacktop(-1);
+                    byte[] vch2 = stack.pollLast();
+                    byte[] vch1 = stack.pollLast();
+
+                    // Inputs must be the same size
+                    if (vch1.length != vch2.length) {
+                        throw new ScriptException("Invalid operand size.");
+                    }
+
+                    // To avoid allocating, we modify vch1 in place.
+                    switch (opcode) {
+                        case OP_AND:
+                            for (int i = 0; i < vch1.length; i++) {
+                                vch1[i] &= vch2[i];
+                            }
+                            break;
+                        case OP_OR:
+                            for (int i = 0; i < vch1.length; i++) {
+                                vch1[i] |= vch2[i];
+                            }
+                            break;
+                        case OP_XOR:
+                            for (int i = 0; i < vch1.length; i++) {
+                                vch1[i] ^= vch2[i];
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+
+                    // And pop vch2.
+                    //popstack(stack);
+
+                    //put vch1 back on stack
+                    stack.addLast(vch1);
+
+                    break;
+
                 case OP_EQUAL:
                     if (stack.size() < 2)
                         throw new ScriptException("Attempted OP_EQUAL on a stack with size < 2");
