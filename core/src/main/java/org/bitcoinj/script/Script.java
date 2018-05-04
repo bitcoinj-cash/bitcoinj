@@ -865,63 +865,38 @@ public class Script {
 
     private static boolean isOpcodeDisabled(int opcode, Set<VerifyFlag> verifyFlags) {
 
-        boolean enabledMonolithOpcodes = verifyFlags.contains(VerifyFlag.MONOLITH_OPCODES);
 
-        if (enabledMonolithOpcodes) {
-            switch (opcode) {
-                case OP_CAT:
-                case OP_SPLIT:
+        switch (opcode) {
+            case OP_CAT:
+            case OP_SPLIT:
 
-                case OP_BIN2NUM:
-                case OP_NUM2BIN:
+            case OP_BIN2NUM:
+            case OP_NUM2BIN:
 
-                case OP_INVERT:
-                case OP_LSHIFT:
-                case OP_RSHIFT:
+            case OP_INVERT:
+            case OP_LSHIFT:
+            case OP_RSHIFT:
 
-                case OP_2MUL:
-                case OP_2DIV:
-                case OP_MUL:
-                    return true;
+            case OP_2MUL:
+            case OP_2DIV:
+            case OP_MUL:
+                //disabled codes
+                return true;
 
-                case OP_AND:
-                case OP_OR:
-                case OP_XOR:
-                case OP_DIV:
-                case OP_MOD:
-                    return false;
+            case OP_AND:
+            case OP_OR:
+            case OP_XOR:
+            case OP_DIV:
+            case OP_MOD:
+                //enabled codes, still disabled if flag is not activated
+                return !verifyFlags.contains(VerifyFlag.MONOLITH_OPCODES);
 
-
-                default:
-                    break;
-            }
-        } else {
-
-            switch (opcode) {
-                case OP_CAT:
-                case OP_SPLIT:
-
-                case OP_BIN2NUM:
-                case OP_NUM2BIN:
-
-                case OP_INVERT:
-                case OP_AND:
-                case OP_OR:
-                case OP_XOR:
-                case OP_LSHIFT:
-                case OP_RSHIFT:
-
-                case OP_2MUL:
-                case OP_2DIV:
-                case OP_MUL:
-                case OP_DIV:
-                case OP_MOD:
-                    return true;
-
-                default:
-                    break;
-            }
+            default:
+                //not an opcode that was ever disabled
+                break;
         }
+
+
 
         return false;
 
