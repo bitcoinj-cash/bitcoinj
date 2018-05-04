@@ -882,13 +882,13 @@ public class Script {
                 case OP_2MUL:
                 case OP_2DIV:
                 case OP_MUL:
-                case OP_DIV:
-                case OP_MOD:
                     return true;
 
                 case OP_AND:
                 case OP_OR:
                 case OP_XOR:
+                case OP_DIV:
+                case OP_MOD:
                     return false;
 
 
@@ -1322,7 +1322,20 @@ public class Script {
                     case OP_SUB:
                         numericOPresult = numericOPnum1.subtract(numericOPnum2);
                         break;
-                    case OP_BOOLAND:
+
+                    case OP_DIV:
+                        if (numericOPnum2.intValue() == 0)
+                            throw new ScriptException("Division by zero error");
+                        numericOPresult = numericOPnum1.divide(numericOPnum2);
+                        break;
+
+                        case OP_MOD:
+                            if (numericOPnum2.intValue() == 0)
+                                throw new ScriptException("Modulo by zero error");
+                            numericOPresult = numericOPnum1.mod(numericOPnum2);
+                            break;
+
+                        case OP_BOOLAND:
                         if (!numericOPnum1.equals(BigInteger.ZERO) && !numericOPnum2.equals(BigInteger.ZERO))
                             numericOPresult = BigInteger.ONE;
                         else
@@ -1389,8 +1402,6 @@ public class Script {
                     stack.add(Utils.reverseBytes(Utils.encodeMPI(numericOPresult, false)));
                     break;
                 case OP_MUL:
-                case OP_DIV:
-                case OP_MOD:
                 case OP_LSHIFT:
                 case OP_RSHIFT:
                     throw new ScriptException("Attempted to use disabled Script Op.");
