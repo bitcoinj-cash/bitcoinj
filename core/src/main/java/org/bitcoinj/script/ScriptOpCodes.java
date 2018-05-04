@@ -86,9 +86,9 @@ public class ScriptOpCodes {
 
     // splice ops
     public static final int OP_CAT = 0x7e;
-    public static final int OP_SUBSTR = 0x7f;
-    public static final int OP_LEFT = 0x80;
-    public static final int OP_RIGHT = 0x81;
+    public static final int OP_SPLIT = 0x7f;
+    public static final int OP_NUM2BIN = 0x80;
+    public static final int OP_BIN2NUM = 0x81;
     public static final int OP_SIZE = 0x82;
 
     // bit logic
@@ -159,6 +159,7 @@ public class ScriptOpCodes {
     public static final int OP_NOP8 = 0xb7;
     public static final int OP_NOP9 = 0xb8;
     public static final int OP_NOP10 = 0xb9;
+
     public static final int OP_INVALIDOPCODE = 0xff;
 
     private static final Map<Integer, String> opCodeMap = ImmutableMap.<Integer, String>builder()
@@ -214,9 +215,9 @@ public class ScriptOpCodes {
         .put(OP_SWAP, "SWAP")
         .put(OP_TUCK, "TUCK")
         .put(OP_CAT, "CAT")
-        .put(OP_SUBSTR, "SUBSTR")
-        .put(OP_LEFT, "LEFT")
-        .put(OP_RIGHT, "RIGHT")
+        .put(OP_SPLIT, "SPLIT")
+        .put(OP_NUM2BIN, "NUM2BIN")
+        .put(OP_BIN2NUM, "BIN2NUM")
         .put(OP_SIZE, "SIZE")
         .put(OP_INVERT, "INVERT")
         .put(OP_AND, "AND")
@@ -327,9 +328,9 @@ public class ScriptOpCodes {
         .put("SWAP", OP_SWAP)
         .put("TUCK", OP_TUCK)
         .put("CAT", OP_CAT)
-        .put("SUBSTR", OP_SUBSTR)
-        .put("LEFT", OP_LEFT)
-        .put("RIGHT", OP_RIGHT)
+        .put("SPLIT", OP_SPLIT)
+        .put("NUM2BIN", OP_NUM2BIN)
+        .put("BIN2NUM", OP_BIN2NUM)
         .put("SIZE", OP_SIZE)
         .put("INVERT", OP_INVERT)
         .put("AND", OP_AND)

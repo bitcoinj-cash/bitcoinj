@@ -76,7 +76,8 @@ public class Script {
         DISCOURAGE_UPGRADABLE_NOPS, // Discourage use of NOPs reserved for upgrades (NOP1-10)
         CLEANSTACK, // Require that only a single stack element remains after evaluation.
         CHECKLOCKTIMEVERIFY, // Enable CHECKLOCKTIMEVERIFY operation
-        ENABLESIGHASHFORKID
+        ENABLESIGHASHFORKID,
+        MONOLITH_OPCODES // May 15, 2018 Hard fork
     }
     public static final EnumSet<VerifyFlag> ALL_VERIFY_FLAGS = EnumSet.allOf(VerifyFlag.class);
 
@@ -899,7 +900,7 @@ public class Script {
                 if (opcode == OP_VERIF || opcode == OP_VERNOTIF)
                     throw new ScriptException("Script included OP_VERIF or OP_VERNOTIF");
                 
-                if (opcode == OP_CAT || opcode == OP_SUBSTR || opcode == OP_LEFT || opcode == OP_RIGHT ||
+                if (opcode == OP_CAT || opcode == OP_SPLIT || opcode == OP_NUM2BIN || opcode == OP_BIN2NUM ||
                     opcode == OP_INVERT || opcode == OP_AND || opcode == OP_OR || opcode == OP_XOR ||
                     opcode == OP_2MUL || opcode == OP_2DIV || opcode == OP_MUL || opcode == OP_DIV ||
                     opcode == OP_MOD || opcode == OP_LSHIFT || opcode == OP_RSHIFT)
@@ -1114,9 +1115,9 @@ public class Script {
                         stack.add(OPSWAPtmpChunk2);
                     break;
                 case OP_CAT:
-                case OP_SUBSTR:
-                case OP_LEFT:
-                case OP_RIGHT:
+                case OP_SPLIT:
+                case OP_NUM2BIN:
+                case OP_BIN2NUM:
                     throw new ScriptException("Attempted to use disabled Script Op.");
                 case OP_SIZE:
                     if (stack.size() < 1)
