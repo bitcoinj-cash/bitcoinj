@@ -867,7 +867,6 @@ public class Script {
 
 
         switch (opcode) {
-            case OP_CAT:
             case OP_SPLIT:
 
             case OP_BIN2NUM:
@@ -883,6 +882,7 @@ public class Script {
                 //disabled codes
                 return true;
 
+            case OP_CAT:
             case OP_AND:
             case OP_OR:
             case OP_XOR:
@@ -1157,7 +1157,24 @@ public class Script {
                     if (opcode == OP_TUCK)
                         stack.add(OPSWAPtmpChunk2);
                     break;
+                //byte string operations
                 case OP_CAT:
+                    if (stack.size() < 2)
+                        throw new ScriptException("Invalid stack operation.");
+                    byte[] catBytes2 = stack.pollLast();
+                    byte[] catBytes1 = stack.pollLast();
+
+                    int len = catBytes1.length + catBytes2.length;
+                    if (len > MAX_SCRIPT_ELEMENT_SIZE)
+                        throw new ScriptException("Push value size limit exceeded.");
+
+                    byte[] catOut = new byte[len];
+                    System.arraycopy(catBytes1, 0, catOut, 0, catBytes1.length);
+                    System.arraycopy(catBytes2, 0, catOut, catBytes1.length, catBytes2.length);
+                    stack.addLast(catOut);
+
+                    break;
+
                 case OP_SPLIT:
                 case OP_NUM2BIN:
                 case OP_BIN2NUM:
