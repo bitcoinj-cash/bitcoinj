@@ -858,6 +858,75 @@ public class Script {
          executeScript(txContainingThis, index, script, stack, Coin.ZERO, verifyFlags);
     }
 
+    private static boolean isOpcodeDisabled(int opcode, Set<VerifyFlag> verifyFlags) {
+
+        boolean enabledMonolithOpcodes = verifyFlags.contains(VerifyFlag.MONOLITH_OPCODES);
+
+        if (enabledMonolithOpcodes) {
+            switch (opcode) {
+                case OP_CAT:
+                    return true;
+                case OP_SPLIT:
+                    return true;
+                case OP_BIN2NUM:
+                    return true;
+                case OP_NUM2BIN:
+                    return true;
+                case OP_INVERT:
+                    return true;
+                case OP_AND:
+                    return true;
+                case OP_OR:
+                    return true;
+                case OP_XOR:
+                    return true;
+                case OP_2MUL:
+                    return true;
+                case OP_2DIV:
+                    return true;
+                case OP_MUL:
+                    return true;
+                case OP_DIV:
+                    return true;
+                case OP_MOD:
+                    return true;
+                case OP_LSHIFT:
+                    return true;
+                case OP_RSHIFT:
+                    return true;
+
+                default:
+                    break;
+            }
+        } else {
+
+            switch (opcode) {
+                case OP_CAT:
+                case OP_SPLIT:
+                case OP_BIN2NUM:
+                case OP_NUM2BIN:
+                case OP_INVERT:
+                case OP_AND:
+                case OP_OR:
+                case OP_XOR:
+                case OP_2MUL:
+                case OP_2DIV:
+                case OP_MUL:
+                case OP_DIV:
+                case OP_MOD:
+                case OP_LSHIFT:
+                case OP_RSHIFT:
+                    return true;
+
+                default:
+                    break;
+            }
+        }
+
+        return false;
+
+    }
+
     /**
      * Exposes the script interpreter. Normally you should not use this directly, instead use
      * {@link org.bitcoinj.core.TransactionInput#verify(org.bitcoinj.core.TransactionOutput)} or
@@ -901,26 +970,8 @@ public class Script {
                     throw new ScriptException("Script included OP_VERIF or OP_VERNOTIF");
 
                 // Some opcodes are disabled.
-                switch (opcode) {
-                    case OP_CAT:
-                    case OP_SPLIT:
-                    case OP_BIN2NUM:
-                    case OP_NUM2BIN:
-                    case OP_INVERT:
-                    case OP_AND:
-                    case OP_OR:
-                    case OP_XOR:
-                    case OP_2MUL:
-                    case OP_2DIV:
-                    case OP_MUL:
-                    case OP_DIV:
-                    case OP_MOD:
-                    case OP_LSHIFT:
-                    case OP_RSHIFT:
-                        throw new ScriptException("Script included a disabled Script Op.");
-
-                    default:
-                        break;
+                if (isOpcodeDisabled(opcode, verifyFlags)) {
+                    throw new ScriptException("Script included a disabled Script Op.");
                 }
 
                 switch (opcode) {
