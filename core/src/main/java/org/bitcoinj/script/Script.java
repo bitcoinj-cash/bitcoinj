@@ -899,13 +899,30 @@ public class Script {
                 
                 if (opcode == OP_VERIF || opcode == OP_VERNOTIF)
                     throw new ScriptException("Script included OP_VERIF or OP_VERNOTIF");
-                
-                if (opcode == OP_CAT || opcode == OP_SPLIT || opcode == OP_NUM2BIN || opcode == OP_BIN2NUM ||
-                    opcode == OP_INVERT || opcode == OP_AND || opcode == OP_OR || opcode == OP_XOR ||
-                    opcode == OP_2MUL || opcode == OP_2DIV || opcode == OP_MUL || opcode == OP_DIV ||
-                    opcode == OP_MOD || opcode == OP_LSHIFT || opcode == OP_RSHIFT)
-                    throw new ScriptException("Script included a disabled Script Op.");
-                
+
+                // Some opcodes are disabled.
+                switch (opcode) {
+                    case OP_CAT:
+                    case OP_SPLIT:
+                    case OP_BIN2NUM:
+                    case OP_NUM2BIN:
+                    case OP_INVERT:
+                    case OP_AND:
+                    case OP_OR:
+                    case OP_XOR:
+                    case OP_2MUL:
+                    case OP_2DIV:
+                    case OP_MUL:
+                    case OP_DIV:
+                    case OP_MOD:
+                    case OP_LSHIFT:
+                    case OP_RSHIFT:
+                        throw new ScriptException("Script included a disabled Script Op.");
+
+                    default:
+                        break;
+                }
+
                 switch (opcode) {
                 case OP_IF:
                     if (!shouldExecute) {
