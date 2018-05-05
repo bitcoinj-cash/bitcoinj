@@ -409,7 +409,15 @@
 ["1", "MOD", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "Not enough operands"],
 ["0", "MOD", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "Not enough operands"],
 ["2147483648 1", "MOD", "P2SH,STRICTENC,MONOLITH_OPCODES", "UNKNOWN_ERROR", "We cannot do math on 5-byte integers"],
-["1 2147483648", "MOD", "P2SH,STRICTENC,MONOLITH_OPCODES", "UNKNOWN_ERROR", "We cannot do math on 5-byte integers"]
+["1 2147483648", "MOD", "P2SH,STRICTENC,MONOLITH_OPCODES", "UNKNOWN_ERROR", "We cannot do math on 5-byte integers"],
+
+["", "CAT", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "CAT, empty stack"],
+["'a'", "CAT", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "CAT, one parameter"],
+[
+    "'a' 'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh'",
+    "CAT",
+    "P2SH,STRICTENC,MONOLITH_OPCODES", "PUSH_SIZE", "CAT oversized result"
+]
 
 
 ]
