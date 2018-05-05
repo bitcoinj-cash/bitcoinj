@@ -54,6 +54,9 @@ public class Utils {
     public static final String BITCOIN_SIGNED_MESSAGE_HEADER = "Bitcoin Signed Message:\n";
     public static final byte[] BITCOIN_SIGNED_MESSAGE_HEADER_BYTES = BITCOIN_SIGNED_MESSAGE_HEADER.getBytes(Charsets.UTF_8);
 
+    // zero length arrays are immutable so we can save some object allocation by reusing the same instance.
+    public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
     private static final Joiner SPACE_JOINER = Joiner.on(" ");
 
     private static BlockingQueue<Boolean> mockSleepQueue;
@@ -256,13 +259,77 @@ public class Utils {
     }
 
     /**
+     * Returns a minimally encoded encoded version of the data. That is, a version will pass the check
+     * in checkMinimallyEncodedLE(byte[] bytesLE).
+     *
+     * If the data is already minimally encoded the original byte array will be returned.
+     *
+     * inspired by: https://reviews.bitcoinabc.org/D1219
+     *
+     * @param dataLE
+     * @return
+     */
+    public static byte[] minimallyEncodeLE(byte[] dataLE) {
+
+        if (dataLE.length == 0) {
+            return dataLE;
+        }
+
+        // If the last byte is not 0x00 or 0x80, we are minimally encoded.
+        int last = dataLE[dataLE.length - 1];
+        if ((last & 0x7f) != 0) {
+            return dataLE;
+        }
+
+        // If the script is one byte long, then we have a zero, which encodes as an
+        // empty array.
+        if (dataLE.length == 1) {
+            return EMPTY_BYTE_ARRAY;
+        }
+
+        // If the next byte has it sign bit set, then we are minimaly encoded.
+        if ((dataLE[dataLE.length - 2] & 0x80) != 0) {
+            return dataLE;
+        }
+
+        //we might modify the array so clone it
+        dataLE = dataLE.clone();
+
+        // We are not minimally encoded, we need to figure out how much to trim.
+        // we are using i - 1 indexes here as we want to ignore the last byte (first byte in BE)
+        for (int i = dataLE.length - 1; i > 0; i--) {
+            // We found a non zero byte, time to encode.
+            if (dataLE[i - 1] != 0) {
+                if ((dataLE[i - 1] & 0x80) != 0) {
+                    // We found a byte with it's sign bit set so we need one more
+                    // byte.
+                    dataLE[i++] = (byte) last;
+                } else {
+                    // the sign bit is clear, we can use it.
+                    // add the sign bit from the last byte
+                    dataLE[i - 1] |= last;
+                }
+
+                return Arrays.copyOf(dataLE, i);
+            }
+        }
+
+        // If we the whole thing is zeros, then we have a zero.
+        return EMPTY_BYTE_ARRAY;
+    }
+
+    /**
      * checks that LE encoded number is minimally represented.  That is that there are no leading zero bytes except in
      * the case: if there's more than one byte and the most significant bit of the second-most-significant-byte is set it
      * would conflict with the sign bit.
      * @param bytesLE
      * @return
      */
-    public static boolean checkMinimallyEncodedLE(byte[] bytesLE) {
+    public static boolean checkMinimallyEncodedLE(byte[] bytesLE, int maxNumSize) {
+
+        if (bytesLE.length > maxNumSize) {
+            return false;
+        }
 
         if (bytesLE.length > 0) {
             // Check that the number is encoded with the minimum possible number
