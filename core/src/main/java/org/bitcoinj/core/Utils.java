@@ -260,7 +260,6 @@ public class Utils {
      * the case: if there's more than one byte and the most significant bit of the second-most-significant-byte is set it
      * would conflict with the sign bit.
      * @param bytesLE
-     * @param maxNumSize
      * @return
      */
     public static boolean checkMinimallyEncodedLE(byte[] bytesLE) {
