@@ -61,6 +61,7 @@ public class TestNet2Params extends AbstractBitcoinNetParams {
 
         // Nov, 13 hard fork
         daaUpdateHeight = 1188697;
+        cashAddrPrefix = "bchtest";
     }
 
     private static TestNet2Params instance;

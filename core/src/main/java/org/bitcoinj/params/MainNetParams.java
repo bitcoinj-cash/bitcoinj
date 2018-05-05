@@ -132,6 +132,7 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         uahfHeight = 478559;
         // Nov, 13 hard fork
         daaUpdateHeight = 504031;
+        cashAddrPrefix = "bitcoincash";
     }
 
     private static MainNetParams instance;

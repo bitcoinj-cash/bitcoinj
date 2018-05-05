@@ -35,9 +35,16 @@ public class EmergencyDifficultyAdjustmentRuleChecker extends AbstractPowRulesCh
         StoredBlock cursor = blockStore.get(storedPrev.getHeader().getHash());
         for (int i = 0; i < sizeOfBlocks; i++) {
             if (cursor == null) {
-                throw new NullPointerException("The previous block no longer exists");
+                throw new NullPointerException("Not enough blocks to check difficulty.");
             }
             cursor = blockStore.get(cursor.getHeader().getPrevBlockHash());
+        }
+        //Check to see if there are enough blocks before cursor to correctly calculate the median time
+        StoredBlock beforeCursor = cursor;
+        for (int i = 0; i < 10; i++) {
+            beforeCursor = blockStore.get(beforeCursor.getHeader().getPrevBlockHash());
+            if(beforeCursor == null)
+                throw new NullPointerException("Not enough blocks to check difficulty.");
         }
         return BlockChain.getMedianTimestampOfRecentBlocks(storedPrev, blockStore) -
                 BlockChain.getMedianTimestampOfRecentBlocks(cursor, blockStore);

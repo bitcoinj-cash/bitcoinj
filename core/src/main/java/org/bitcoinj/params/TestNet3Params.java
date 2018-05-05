@@ -17,12 +17,9 @@
 
 package org.bitcoinj.params;
 
-import org.bitcoinj.core.*;
-import org.bitcoinj.store.BlockStore;
-import org.bitcoinj.store.BlockStoreException;
+import org.bitcoinj.core.Block;
+import org.bitcoinj.core.Utils;
 
-import com.google.common.base.Preconditions;
-import java.math.BigInteger;
 import java.util.Date;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -57,7 +54,6 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         dnsSeeds = new String[] {
                "testnet-seed.bitcoinabc.org",
                 "testnet-seed-abc.bitcoinforks.org",
-                "testnet-seed.bitcoinunlimited.info",
                 "testnet-seed.bitprim.org",
                 "testnet-seed.deadalnix.me",
                 "testnet-seeder.criptolayer.net"
@@ -74,6 +70,7 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         uahfHeight = 1155876;
         // Nov, 13 hard fork
         daaUpdateHeight = 1188697;
+        cashAddrPrefix = "bchtest";
     }
 
     private static TestNet3Params instance;
