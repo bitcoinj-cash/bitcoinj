@@ -417,7 +417,11 @@
     "'a' 'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh'",
     "CAT",
     "P2SH,STRICTENC,MONOLITH_OPCODES", "PUSH_SIZE", "CAT oversized result"
-]
+],
 
+["", "SPLIT", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "SPLIT, empty stack"],
+["'a'", "SPLIT", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "SPLIT, one parameter"],
+["'abc' 4", "SPLIT", "P2SH,STRICTENC,MONOLITH_OPCODES", "SPLIT_RANGE", "SPLIT, out of bounds"],
+["'abc' -1", "SPLIT", "P2SH,STRICTENC,MONOLITH_OPCODES", "SPLIT_RANGE", "SPLIT, out of bounds"]
 
 ]
