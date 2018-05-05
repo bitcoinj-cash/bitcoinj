@@ -871,7 +871,6 @@ public class Script {
 
 
         switch (opcode) {
-            case OP_BIN2NUM:
             case OP_NUM2BIN:
 
             case OP_INVERT:
@@ -891,6 +890,7 @@ public class Script {
             case OP_XOR:
             case OP_DIV:
             case OP_MOD:
+            case OP_BIN2NUM:
                 //enabled codes, still disabled if flag is not activated
                 return !verifyFlags.contains(VerifyFlag.MONOLITH_OPCODES);
 
@@ -1210,8 +1210,20 @@ public class Script {
                     break;
 
                 case OP_NUM2BIN:
-                case OP_BIN2NUM:
                     throw new ScriptException("Attempted to use disabled Script Op.");
+                case OP_BIN2NUM:
+                    if (stack.size() < 1)
+                        throw new ScriptException("Invalid stack operation.");
+
+                    byte[] binBytes = stack.pollLast();
+                    byte[] numBytes = Utils.minimallyEncodeLE(binBytes);
+
+                    if (!Utils.checkMinimallyEncodedLE(numBytes, DEFAULT_MAX_NUM_ELEMENT_SIZE))
+                        throw new ScriptException("Given operand is not a number within the valid range [-2^31...2^31]");
+
+                    stack.addLast(numBytes);
+
+                    break;
                 case OP_SIZE:
                     if (stack.size() < 1)
                         throw new ScriptException("Attempted OP_SIZE on an empty stack");

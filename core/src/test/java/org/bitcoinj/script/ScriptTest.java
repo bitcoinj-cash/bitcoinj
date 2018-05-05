@@ -586,4 +586,10 @@ public class ScriptTest {
         }
     }
 
+    /** BIN2NUM **/
+
+    public void checkBin2NumOp(byte[] n, byte[] expected) {
+
+    }
+
 }
