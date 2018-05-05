@@ -9,6 +9,28 @@
 ["1  2  ", "2 EQUALVERIFY 1 EQUAL", "P2SH,STRICTENC"],
 ["  1  2  ", "2 EQUALVERIFY 1 EQUAL", "P2SH,STRICTENC"],
 
+["0 0", "AND 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "AND, empty parameters"],
+["0x01 0x00 0x01 0x00", "AND 0x01 0x00 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "AND, simple and"],
+["1 0x01 0x00", "AND 0x01 0x00 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "AND, simple and"],
+["0x01 0x00 1", "AND 0x01 0x00 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "AND, simple and"],
+["1 1", "AND 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "AND, simple and"],
+
+["0x01 0xab 0x01 0xcd", "AND 0x01 0x89 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "AND, more complex operands"],
+
+["0 0", "OR 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OR, empty parameters"],
+["0x01 0x00 0x01 0x00", "OR 0x01 0x00 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OR, simple and"],
+["1 0x01 0x00", "OR 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OR, simple and"],
+["0x01 0x00 1", "OR 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OR, simple and"],
+["1 1", "OR 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OR, simple and"],
+["0x01 0xab 0x01 0xcd", "OR 0x01 0xef EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, more complex operands"],
+
+["0 0", "XOR 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, empty parameters"],
+["0x01 0x00 0x01 0x00", "XOR 0x01 0x00 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, simple and"],
+["1 0x01 0x00", "XOR 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, simple and"],
+["0x01 0x00 1", "XOR 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, simple and"],
+["1 1", "XOR 0x01 0x00 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, simple and"],
+["0x01 0xab 0x01 0xcd", "XOR 0x01 0x66 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, more complex operands"],
+
 ["1", "", "P2SH,STRICTENC"],
 ["0x02 0x01 0x00", "", "P2SH,STRICTENC", "all bytes are significant, not only the last one"],
 ["0x09 0x00000000 0x00000000 0x10", "", "P2SH,STRICTENC", "equals zero when cast to Int64"],

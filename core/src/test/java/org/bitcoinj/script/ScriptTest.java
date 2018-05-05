@@ -234,6 +234,7 @@ public class ScriptTest {
         assertEquals("OP_0 push length", 0, stack.get(0).length);
     }
 
+
     private Script parseScriptString(String string) throws IOException {
         String[] words = string.split("[ \\t\\n]");
 
@@ -502,6 +503,63 @@ public class ScriptTest {
         Script script = builder.build();
         assertEquals("PUSHDATA(1)[11] 16 15 15 16 PUSHDATA(1)[11]", script.toString());
     }
+
+    /** Bitwise ops **/
+
+    static final int MAX_BITWISE_RANDOM_TESTS = 2000;
+
+    @Test
+    public void testBitwiseRandomData() throws IOException {
+        byte[] a = new byte[MAX_BITWISE_RANDOM_TESTS];
+        byte[] b = new byte[MAX_BITWISE_RANDOM_TESTS];
+        new Random(0).nextBytes(a); //using the same seed always generates the same byte array
+        new Random(1).nextBytes(b);
+
+        for (int x = 0 ; x < MAX_BITWISE_RANDOM_TESTS ; x++) {
+            byte aandb = (byte)(a[x] & b[x]);
+            byte aorb  = (byte)(a[x] | b[x]);
+            byte axorb = (byte)(a[x] ^ b[x]);
+
+            Assert.assertEquals(generateAndExecuteBitwiseScript(a[x], b[x], "AND"), aandb);
+            Assert.assertEquals(generateAndExecuteBitwiseScript(b[x], a[x], "AND"), aandb);
+            Assert.assertEquals(generateAndExecuteBitwiseScript(a[x], b[x], "OR"), aorb);
+            Assert.assertEquals(generateAndExecuteBitwiseScript(b[x], a[x], "OR"), aorb);
+            Assert.assertEquals(generateAndExecuteBitwiseScript(a[x], b[x], "XOR"), axorb);
+            Assert.assertEquals(generateAndExecuteBitwiseScript(b[x], a[x], "XOR"), axorb);
+        }
+    }
+
+    @Test
+    public void testBitwiseOpcodes() {
+        for (int x = 0; x < ScriptTestBitwiseData.a.length ; x++) {
+            byte a = (byte) ScriptTestBitwiseData.a[x];
+            byte b = (byte) ScriptTestBitwiseData.b[x];
+            byte expected_xor = (byte)(a^b);
+
+            Assert.assertEquals(generateAndExecuteBitwiseScript(a, b, "AND"), (byte)ScriptTestBitwiseData.aandb[x]);
+            Assert.assertEquals(generateAndExecuteBitwiseScript(b, a, "AND"), (byte)ScriptTestBitwiseData.aandb[x]);
+            Assert.assertEquals(generateAndExecuteBitwiseScript(a, b, "OR"), (byte)ScriptTestBitwiseData.aorb[x]);
+            Assert.assertEquals(generateAndExecuteBitwiseScript(b, a, "OR"), (byte)ScriptTestBitwiseData.aorb[x]);
+            Assert.assertEquals(generateAndExecuteBitwiseScript(a, b, "XOR"), expected_xor);
+            Assert.assertEquals(generateAndExecuteBitwiseScript(b, a, "XOR"), expected_xor);
+        }
+    }
+
+    private byte generateAndExecuteBitwiseScript(byte a, byte b, String opcode) {
+        byte[] result = generateAndExecuteBitwiseScript(new byte[]{a}, new byte[]{b}, opcode);
+        return result[0];
+    }
+
+    private byte[] generateAndExecuteBitwiseScript(byte[] a, byte[] b, String opcode) {
+        Script script = new ScriptBuilder().data(a).data(b).op(ScriptOpCodes.getOpCode(opcode)).build();
+        LinkedList<byte[]> stack = new LinkedList<byte[]>();
+        EnumSet<VerifyFlag> verifyFlags = EnumSet.noneOf(VerifyFlag.class);
+        verifyFlags.add(VerifyFlag.MONOLITH_OPCODES);
+        Script.executeScript(new Transaction(PARAMS), 0, script, stack, Coin.ZERO, verifyFlags);
+        Assert.assertEquals("Stack size must be 1", stack.size(), 1);
+        return stack.peekLast();
+    }
+
 
     /** Number encoding **/
 
