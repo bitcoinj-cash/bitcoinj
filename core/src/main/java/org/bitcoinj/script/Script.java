@@ -1371,6 +1371,8 @@ public class Script {
                     throw new ScriptException("Attempted to use disabled Script Op.");
                 case OP_ADD:
                 case OP_SUB:
+                case OP_DIV:
+                case OP_MOD:
                 case OP_BOOLAND:
                 case OP_BOOLOR:
                 case OP_NUMEQUAL:
@@ -1404,7 +1406,27 @@ public class Script {
                         case OP_MOD:
                             if (numericOPnum2.intValue() == 0)
                                 throw new ScriptException("Modulo by zero error");
-                            numericOPresult = numericOPnum1.mod(numericOPnum2);
+
+                            /**
+                             * BigInteger doesn't behave the way we want for modulo operations.  Firstly it's
+                             * always garunteed to return a +ve result.  Secondly it will throw an exception
+                             * if the 2nd operand is negative.  So we'll convert the values to longs and use native
+                             * modulo.  When we expand the number limits to arbitrary length we will likely need
+                             * a new BigNum implementation to handle this correctly.
+                             */
+                            long lOp1 = numericOPnum1.longValue();
+                            if (!BigInteger.valueOf(lOp1).equals(numericOPnum1)) {
+                                //in case the value is larger than a long can handle we need to crash and burn.
+                                throw new RuntimeException("Cannot handle large negative operand for modulo operation");
+                            }
+                            long lOp2 = numericOPnum2.longValue();
+                            if (!BigInteger.valueOf(lOp2).equals(numericOPnum2)) {
+                                //in case the value is larger than a long can handle we need to crash and burn.
+                                throw new RuntimeException("Cannot handle large negative operand for modulo operation");
+                            }
+                            long lOpResult = lOp1 % lOp2;
+                            numericOPresult = BigInteger.valueOf(lOpResult);
+
                             break;
 
                         case OP_BOOLAND:
