@@ -871,8 +871,6 @@ public class Script {
 
 
         switch (opcode) {
-            case OP_NUM2BIN:
-
             case OP_INVERT:
             case OP_LSHIFT:
             case OP_RSHIFT:
@@ -890,6 +888,7 @@ public class Script {
             case OP_XOR:
             case OP_DIV:
             case OP_MOD:
+            case OP_NUM2BIN:
             case OP_BIN2NUM:
                 //enabled codes, still disabled if flag is not activated
                 return !verifyFlags.contains(VerifyFlag.MONOLITH_OPCODES);
@@ -1210,7 +1209,43 @@ public class Script {
                     break;
 
                 case OP_NUM2BIN:
-                    throw new ScriptException("Attempted to use disabled Script Op.");
+                    if (stack.size() < 2)
+                        throw new ScriptException("Invalid stack operation.");
+
+                    int numSize = castToBigInteger(stack.pollLast(), enforceMinimal).intValue();
+
+                    if (numSize > MAX_SCRIPT_ELEMENT_SIZE)
+                        throw new ScriptException("Push value size limit exceeded.");
+
+                    byte[] rawNumBytes = stack.pollLast();
+
+                    // Try to see if we can fit that number in the number of
+                    // byte requested.
+                    byte[] minimalNumBytes = Utils.minimallyEncodeLE(rawNumBytes);
+                    if (minimalNumBytes.length > numSize) {
+                        //we can't
+                        throw new ScriptException("The requested encoding is impossible to satisfy.");
+                    }
+
+                    if (minimalNumBytes.length == numSize) {
+                        //already the right size so just push it to stack
+                        stack.addLast(minimalNumBytes);
+                    } else if (numSize == 0) {
+                        stack.addLast(Utils.EMPTY_BYTE_ARRAY);
+                    } else {
+                        int signBit = 0x00;
+                        if (minimalNumBytes.length > 0) {
+                            signBit = minimalNumBytes[minimalNumBytes.length - 1] & 0x80;
+                            minimalNumBytes[minimalNumBytes.length - 1] &= 0x7f;
+                        }
+                        int minimalBytesToCopy = minimalNumBytes.length > numSize ? numSize : minimalNumBytes.length;
+                        byte[] expandedNumBytes = new byte[numSize]; //initialized to all zeroes
+                        System.arraycopy(minimalNumBytes, 0, expandedNumBytes, 0, minimalBytesToCopy);
+                        expandedNumBytes[expandedNumBytes.length - 1] = (byte) signBit;
+                        stack.addLast(expandedNumBytes);
+                    }
+                    break;
+
                 case OP_BIN2NUM:
                     if (stack.size() < 1)
                         throw new ScriptException("Invalid stack operation.");
