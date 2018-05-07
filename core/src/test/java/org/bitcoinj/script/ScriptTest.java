@@ -43,6 +43,8 @@ import java.nio.charset.Charset;
 import java.util.*;
 
 import static org.bitcoinj.core.Utils.HEX;
+import static org.bitcoinj.core.Utils.toByteArray;
+import static org.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
 import static org.bitcoinj.script.ScriptOpCodes.OP_0;
 import static org.bitcoinj.script.ScriptOpCodes.OP_INVALIDOPCODE;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -520,43 +522,61 @@ public class ScriptTest {
             byte aorb  = (byte)(a[x] | b[x]);
             byte axorb = (byte)(a[x] ^ b[x]);
 
-            Assert.assertEquals(generateAndExecuteBitwiseScript(a[x], b[x], "AND"), aandb);
-            Assert.assertEquals(generateAndExecuteBitwiseScript(b[x], a[x], "AND"), aandb);
-            Assert.assertEquals(generateAndExecuteBitwiseScript(a[x], b[x], "OR"), aorb);
-            Assert.assertEquals(generateAndExecuteBitwiseScript(b[x], a[x], "OR"), aorb);
-            Assert.assertEquals(generateAndExecuteBitwiseScript(a[x], b[x], "XOR"), axorb);
-            Assert.assertEquals(generateAndExecuteBitwiseScript(b[x], a[x], "XOR"), axorb);
+            Assert.assertEquals(bitwiseScript(a[x], b[x], "AND"), aandb);
+            Assert.assertEquals(bitwiseScript(b[x], a[x], "AND"), aandb);
+            Assert.assertEquals(bitwiseScript(a[x], b[x], "OR"), aorb);
+            Assert.assertEquals(bitwiseScript(b[x], a[x], "OR"), aorb);
+            Assert.assertEquals(bitwiseScript(a[x], b[x], "XOR"), axorb);
+            Assert.assertEquals(bitwiseScript(b[x], a[x], "XOR"), axorb);
         }
     }
 
     @Test
     public void testBitwiseOpcodes() {
         for (int x = 0; x < ScriptTestBitwiseData.a.length ; x++) {
-            byte a = (byte) ScriptTestBitwiseData.a[x];
-            byte b = (byte) ScriptTestBitwiseData.b[x];
+            byte a = ScriptTestBitwiseData.a[x];
+            byte b = ScriptTestBitwiseData.b[x];
             byte expected_xor = (byte)(a^b);
 
-            Assert.assertEquals(generateAndExecuteBitwiseScript(a, b, "AND"), (byte)ScriptTestBitwiseData.aandb[x]);
-            Assert.assertEquals(generateAndExecuteBitwiseScript(b, a, "AND"), (byte)ScriptTestBitwiseData.aandb[x]);
-            Assert.assertEquals(generateAndExecuteBitwiseScript(a, b, "OR"), (byte)ScriptTestBitwiseData.aorb[x]);
-            Assert.assertEquals(generateAndExecuteBitwiseScript(b, a, "OR"), (byte)ScriptTestBitwiseData.aorb[x]);
-            Assert.assertEquals(generateAndExecuteBitwiseScript(a, b, "XOR"), expected_xor);
-            Assert.assertEquals(generateAndExecuteBitwiseScript(b, a, "XOR"), expected_xor);
+            Assert.assertEquals(bitwiseScript(a, b, "AND"), ScriptTestBitwiseData.aandb[x]);
+            Assert.assertEquals(bitwiseScript(b, a, "AND"), ScriptTestBitwiseData.aandb[x]);
+            Assert.assertEquals(bitwiseScript(a, b, "OR"),  ScriptTestBitwiseData.aorb[x]);
+            Assert.assertEquals(bitwiseScript(b, a, "OR"),  ScriptTestBitwiseData.aorb[x]);
+            Assert.assertEquals(bitwiseScript(a, b, "XOR"), expected_xor);
+            Assert.assertEquals(bitwiseScript(b, a, "XOR"), expected_xor);
         }
     }
 
-    private byte generateAndExecuteBitwiseScript(byte a, byte b, String opcode) {
-        byte[] result = generateAndExecuteBitwiseScript(new byte[]{a}, new byte[]{b}, opcode);
+    private byte bitwiseScript(byte a, byte b, String opcode) {
+        byte[] result = bitwiseScript(new byte[]{a}, new byte[]{b}, opcode);
         return result[0];
     }
 
-    private byte[] generateAndExecuteBitwiseScript(byte[] a, byte[] b, String opcode) {
-        Script script = new ScriptBuilder().data(a).data(b).op(ScriptOpCodes.getOpCode(opcode)).build();
-        LinkedList<byte[]> stack = new LinkedList<byte[]>();
+    private byte[] bitwiseScript(byte[] a, byte[] b, String opcode) {
+        ScriptBuilder builder = new ScriptBuilder();
+        if (a != null) {
+            builder.data(a);
+        }
+        if (b != null) {
+            builder.data(b);
+        }
+        builder.op(ScriptOpCodes.getOpCode(opcode));
+        return executeMonolithScript(builder.build());
+    }
+
+    private void executeFailedMonolithScript(Script script, String message) {
+        try {
+            executeMonolithScript(script);
+            fail("Script should fails with '"+message+"'");
+        } catch (ScriptException e) {
+            Assert.assertEquals(message, e.getMessage());
+        }
+    }
+    private byte[] executeMonolithScript(Script script) {
+        LinkedList<byte[]> stack = new LinkedList<>();
         EnumSet<VerifyFlag> verifyFlags = EnumSet.noneOf(VerifyFlag.class);
         verifyFlags.add(VerifyFlag.MONOLITH_OPCODES);
         Script.executeScript(new Transaction(PARAMS), 0, script, stack, Coin.ZERO, verifyFlags);
-        Assert.assertEquals("Stack size must be 1", stack.size(), 1);
         return stack.peekLast();
     }
 
@@ -644,10 +664,118 @@ public class ScriptTest {
         }
     }
 
+
+    /* CAT SPLIT ops */
+
+    @Test
+    public void testOpCat() {
+        final byte[] EMPTY = {};
+        final byte[] A = {'a'};
+        final byte[] A_B = {'a', 'b'};
+        final byte[] ZEROS_1 = {0x00};
+        final byte[] ZEROS_2 = {0x00, 0x00};
+        final byte[] ZEROS_4 = {0x00, 0x00, 0x00, 0x00};
+
+        Assert.assertArrayEquals(bitwiseScript(EMPTY, EMPTY, "CAT"), EMPTY);
+        Assert.assertArrayEquals(bitwiseScript(ZEROS_1, ZEROS_1, "CAT"), ZEROS_2);
+        Assert.assertArrayEquals(bitwiseScript(ZEROS_2, ZEROS_2, "CAT"), ZEROS_4);
+
+        Assert.assertArrayEquals(bitwiseScript(A, EMPTY, "CAT"), A);
+        Assert.assertArrayEquals(bitwiseScript(A_B, EMPTY, "CAT"), A_B);
+        Assert.assertArrayEquals(bitwiseScript(ZEROS_1, EMPTY, "CAT"), ZEROS_1);
+        Assert.assertArrayEquals(bitwiseScript(ZEROS_2, EMPTY, "CAT"), ZEROS_2);
+        Assert.assertArrayEquals(bitwiseScript(ZEROS_4, EMPTY, "CAT"), ZEROS_4);
+
+        Assert.assertArrayEquals(bitwiseScript(EMPTY, A, "CAT"), A);
+        Assert.assertArrayEquals(bitwiseScript(EMPTY, A_B, "CAT"), A_B);
+        Assert.assertArrayEquals(bitwiseScript(EMPTY, ZEROS_1, "CAT"), ZEROS_1);
+        Assert.assertArrayEquals(bitwiseScript(EMPTY, ZEROS_2, "CAT"), ZEROS_2);
+        Assert.assertArrayEquals(bitwiseScript(EMPTY, ZEROS_4, "CAT"), ZEROS_4);
+
+        Assert.assertArrayEquals(bitwiseScript(A_B, new byte[]{'c', 'd'}, "CAT"), new byte[]{'a', 'b', 'c', 'd'});
+
+
+        for (int x = 0; x < MAX_SCRIPT_ELEMENT_SIZE ; x++) {
+            int firstSize = x;
+            int secondSize = (int)MAX_SCRIPT_ELEMENT_SIZE - x;
+            byte[] first = new byte[firstSize];
+            byte[] second = new byte[secondSize];
+            byte[] cat = new byte[(int)MAX_SCRIPT_ELEMENT_SIZE];
+            System.arraycopy(ScriptTestBitwiseData.a, 0, first, 0, firstSize);
+            System.arraycopy(ScriptTestBitwiseData.b, 0, second, 0, secondSize);
+
+            System.arraycopy(ScriptTestBitwiseData.a, 0, cat, 0, firstSize);
+            System.arraycopy(ScriptTestBitwiseData.b, 0, cat, firstSize, secondSize);
+
+            Assert.assertArrayEquals(bitwiseScript(first, second, "CAT"), cat);
+
+            if (firstSize != 0 && secondSize != 0) {
+                // Try overflow
+                byte[] secondOverflow = new byte[secondSize + 1];
+                System.arraycopy(ScriptTestBitwiseData.a, 0, secondOverflow, 0, secondSize + 1);
+
+                try {
+                    Assert.assertArrayEquals(bitwiseScript(first, secondOverflow, "CAT"), cat);
+                    fail("CAT should fail when result is more than " + MAX_SCRIPT_ELEMENT_SIZE);
+                } catch (ScriptException e) {
+                    Assert.assertEquals("Push value size limit exceeded.", e.getMessage());
+                }
+            }
+
+        }
+    }
+    @Test
+    public void testOpSplit() {
+        final byte[] EMPTY = {};
+        final byte[] A = {'a'};
+        final byte[] B = {'b'};
+        final byte[] A_B = {'a', 'b'};
+
+        Assert.assertArrayEquals(EMPTY, executeMonolithScript(new ScriptBuilder().data(EMPTY).number(0).op(ScriptOpCodes.OP_SPLIT).build()));
+
+        Assert.assertArrayEquals(A, executeMonolithScript(new ScriptBuilder().data(A).number(0).op(ScriptOpCodes.OP_SPLIT).build()));
+        Assert.assertArrayEquals(EMPTY, executeMonolithScript(new ScriptBuilder().data(A).number(A.length).op(ScriptOpCodes.OP_SPLIT).build()));
+
+        Assert.assertArrayEquals(A_B, executeMonolithScript(new ScriptBuilder().data(A_B).number(0).op(ScriptOpCodes.OP_SPLIT).build()));
+        Assert.assertArrayEquals(B, executeMonolithScript(new ScriptBuilder().data(A_B).number(1).op(ScriptOpCodes.OP_SPLIT).build()));
+        Assert.assertArrayEquals(EMPTY, executeMonolithScript(new ScriptBuilder().data(A_B).number(2).op(ScriptOpCodes.OP_SPLIT).build()));
+
+        executeFailedMonolithScript(new ScriptBuilder().op(ScriptOpCodes.OP_SPLIT).build(), "Invalid stack operation.");
+        executeFailedMonolithScript(new ScriptBuilder().data(EMPTY).number(1).op(ScriptOpCodes.OP_SPLIT).build(), "Invalid OP_SPLIT range.");
+    }
+
     /** BIN2NUM **/
 
-    public void checkBin2NumOp(byte[] n, byte[] expected) {
+    @Test
+    public void testBin2Num() {
+        // known values
+        checkBin2NumOp(toByteArray(0xab, 0xcd, 0xef, 0x00), toByteArray(0xab, 0xcd, 0xef, 0x00));
+        checkBin2NumOp(toByteArray(0xab, 0xcd, 0x7f), toByteArray(0xab, 0xcd, 0x7f, 0x00));
 
+        // reductions
+        checkBin2NumOp(toByteArray(0xab, 0xcd, 0xef, 0xc2), toByteArray(0xab, 0xcd, 0xef, 0x42, 0x80));
+        checkBin2NumOp(toByteArray(0xab, 0xcd, 0x7f, 0x42), toByteArray(0xab, 0xcd, 0x7f, 0x42, 0x00));
+
+        // Empty stack
+        executeFailedMonolithScript(new ScriptBuilder().op(ScriptOpCodes.OP_BIN2NUM).build(), "Invalid stack operation.");
+        executeFailedMonolithScript(new ScriptBuilder().op(ScriptOpCodes.OP_NUM2BIN).build(), "Invalid stack operation.");
+
+        // Values that do not fit in 4 bytes are considered out of range for BIN2NUM
+        executeFailedMonolithScript(new ScriptBuilder().data(toByteArray(0xab, 0xcd, 0xef, 0xc2, 0x80)).op(ScriptOpCodes.OP_BIN2NUM).build(), "Given operand is not a number within the valid range [-2^31...2^31]");
+        executeFailedMonolithScript(new ScriptBuilder().data(toByteArray(0x00, 0x00, 0x00, 0x80, 0x80)).op(ScriptOpCodes.OP_BIN2NUM).build(), "Given operand is not a number within the valid range [-2^31...2^31]");
+
+        // NUM2BIN require 2 elements on the stack.
+        executeFailedMonolithScript(new ScriptBuilder().data(toByteArray( 0x00)).op(ScriptOpCodes.OP_NUM2BIN).build(), "Invalid stack operation.");
+
+        executeFailedMonolithScript(new ScriptBuilder().data(new byte[0]).data(toByteArray(0x09, 0x02)).op(ScriptOpCodes.OP_NUM2BIN).build(), "Push value size limit exceeded.");
+
+        // Check that the requested encoding is possible.
+        executeFailedMonolithScript(new ScriptBuilder().data(toByteArray(0xab, 0xcd, 0xef, 0x80)).data(toByteArray(0x03)).op(ScriptOpCodes.OP_NUM2BIN).build(), "The requested encoding is impossible to satisfy.");
+    }
+
+    private void checkBin2NumOp(byte[] n, byte[] expected) {
+        Assert.assertArrayEquals(n, executeMonolithScript(new ScriptBuilder().data(expected).op(ScriptOpCodes.OP_BIN2NUM).build()));
+        Assert.assertArrayEquals(expected, executeMonolithScript(new ScriptBuilder().data(n).data(new byte[]{(byte)expected.length}).op(ScriptOpCodes.OP_NUM2BIN).build()));
     }
 
 }

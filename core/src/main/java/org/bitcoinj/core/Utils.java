@@ -747,4 +747,13 @@ public class Utils {
 
     static long ForkBlockTime = 1501593374; // 6 blocks after the fork time
     public static boolean isAfterFork(long time) { return time >= ForkBlockTime; }
+
+
+    public static byte[] toByteArray(int... values) {
+        byte[] conv = new byte[values.length];
+        for (int i = 0; i < values.length; i++) {
+            conv[i] = (byte)(values[i] & 0xFF);
+        }
+        return conv;
+    }
 }
