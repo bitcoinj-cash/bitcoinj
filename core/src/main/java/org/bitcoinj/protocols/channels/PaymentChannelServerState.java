@@ -226,7 +226,7 @@ public abstract class PaymentChannelServerState {
     }
 
     /**
-     * Called when the client provides us with a new signature and wishes to increment total payment by size.		+
+     * Called when the client provides us with a new signature and wishes to increment total payment by size.
      * Verifies the provided signature and only updates values if everything checks out.
      * If the new refundSize is not the lowest we have seen, it is simply ignored.
      *
@@ -374,7 +374,7 @@ public abstract class PaymentChannelServerState {
     /**
      * Gets the script that signatures should sign against. This is never a P2SH
      * script, rather the script that would be inside a P2SH script.
-     * @return
+     * @return the {@link Script}
      */
     protected abstract Script getSignedScript();
 

@@ -21,6 +21,9 @@ import com.google.common.base.*;
 import com.google.common.collect.*;
 import com.google.common.util.concurrent.*;
 import org.bitcoinj.core.listeners.*;
+import org.bitcoinj.pow.AbstractPowRulesChecker;
+import org.bitcoinj.pow.AbstractRuleCheckerFactory;
+import org.bitcoinj.pow.factory.RuleCheckerFactory;
 import org.bitcoinj.store.*;
 import org.bitcoinj.utils.*;
 import org.bitcoinj.wallet.Wallet;
@@ -101,6 +104,7 @@ public abstract class AbstractBlockChain {
     private final Object chainHeadLock = new Object();
 
     protected final NetworkParameters params;
+    protected final AbstractRuleCheckerFactory ruleCheckerFactory;
     private final CopyOnWriteArrayList<ListenerRegistration<NewBestBlockListener>> newBestBlockListeners;
     private final CopyOnWriteArrayList<ListenerRegistration<ReorganizeListener>> reorganizeListeners;
     private final CopyOnWriteArrayList<ListenerRegistration<TransactionReceivedInBlockListener>> transactionReceivedListeners;
@@ -149,6 +153,7 @@ public abstract class AbstractBlockChain {
         chainHead = blockStore.getChainHead();
         log.info("chain head is at height {}:\n{}", chainHead.getHeight(), chainHead.getHeader());
         this.params = context.getParams();
+        this.ruleCheckerFactory = RuleCheckerFactory.create(this.params);
 
         this.newBestBlockListeners = new CopyOnWriteArrayList<ListenerRegistration<NewBestBlockListener>>();
         this.reorganizeListeners = new CopyOnWriteArrayList<ListenerRegistration<ReorganizeListener>>();
@@ -485,7 +490,8 @@ public abstract class AbstractBlockChain {
             } else {
                 checkState(lock.isHeldByCurrentThread());
                 // It connects to somewhere on the chain. Not necessarily the top of the best known chain.
-                params.checkDifficultyTransitions(storedPrev, block, blockStore, this);
+                AbstractPowRulesChecker rulesChecker = ruleCheckerFactory.getRuleChecker(storedPrev, block);
+                rulesChecker.checkRules(storedPrev, block, blockStore, this);
                 connectBlock(block, storedPrev, shouldVerifyTransactions(), filteredTxHashList, filteredTxn);
             }
 

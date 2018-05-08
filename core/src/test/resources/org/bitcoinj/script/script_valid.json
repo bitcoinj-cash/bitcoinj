@@ -9,6 +9,28 @@
 ["1  2  ", "2 EQUALVERIFY 1 EQUAL", "P2SH,STRICTENC"],
 ["  1  2  ", "2 EQUALVERIFY 1 EQUAL", "P2SH,STRICTENC"],
 
+["0 0", "AND 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "AND, empty parameters"],
+["0x01 0x00 0x01 0x00", "AND 0x01 0x00 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "AND, simple and"],
+["1 0x01 0x00", "AND 0x01 0x00 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "AND, simple and"],
+["0x01 0x00 1", "AND 0x01 0x00 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "AND, simple and"],
+["1 1", "AND 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "AND, simple and"],
+
+["0x01 0xab 0x01 0xcd", "AND 0x01 0x89 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "AND, more complex operands"],
+
+["0 0", "OR 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OR, empty parameters"],
+["0x01 0x00 0x01 0x00", "OR 0x01 0x00 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OR, simple and"],
+["1 0x01 0x00", "OR 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OR, simple and"],
+["0x01 0x00 1", "OR 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OR, simple and"],
+["1 1", "OR 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OR, simple and"],
+["0x01 0xab 0x01 0xcd", "OR 0x01 0xef EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, more complex operands"],
+
+["0 0", "XOR 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, empty parameters"],
+["0x01 0x00 0x01 0x00", "XOR 0x01 0x00 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, simple and"],
+["1 0x01 0x00", "XOR 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, simple and"],
+["0x01 0x00 1", "XOR 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, simple and"],
+["1 1", "XOR 0x01 0x00 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, simple and"],
+["0x01 0xab 0x01 0xcd", "XOR 0x01 0x66 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "XOR, more complex operands"],
+
 ["1", "", "P2SH,STRICTENC"],
 ["0x02 0x01 0x00", "", "P2SH,STRICTENC", "all bytes are significant, not only the last one"],
 ["0x09 0x00000000 0x00000000 0x10", "", "P2SH,STRICTENC", "equals zero when cast to Int64"],
@@ -521,5 +543,117 @@
 "P2SH,STRICTENC",
 "Basic PUSHDATA1 signedness check"],
 
-["0x00", "SIZE 0 EQUAL", "P2SH,STRICTENC", "Basic OP_0 execution"]
+["0x00", "SIZE 0 EQUAL", "P2SH,STRICTENC", "Basic OP_0 execution"],
+
+["0", "BIN2NUM 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "BIN2NUM, canonical argument "],
+["1", "BIN2NUM 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "BIN2NUM, canonical argument "],
+["-42", "BIN2NUM -42 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "BIN2NUM, canonical argument "],
+["0x01 0x00", "BIN2NUM 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "BIN2NUM, non-canonical argument "],
+["0x04 0xffffff7f", "BIN2NUM 2147483647 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "BIN2NUM, maximum size argument "],
+["0x04 0xffffffff", "BIN2NUM -2147483647 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "BIN2NUM, maximum size argument "],
+["0x05 0xffffff7f80", "BIN2NUM -2147483647 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "BIN2NUM, non-canonical maximum size arguement"],
+["0x05 0x0100000000", "BIN2NUM 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["0x05 0xFE00000000", "BIN2NUM 254 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["0x05 0x0500000080", "BIN2NUM 0x01 0x85 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["0x03 0x800000", "BIN2NUM 128 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Pad where MSB of number is set"],
+["0x03 0x800080", "BIN2NUM -128 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Pad where MSB of number is set"],
+["0x02 0x8000", "BIN2NUM 128 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Pad where MSB of number is set"],
+["0x02 0x8080", "BIN2NUM -128 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Pad where MSB of number is set"],
+["0x03 0x0f0000", "BIN2NUM 15 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Don't pad where MSB of number is not set"],
+["0x03 0x0f0080", "BIN2NUM -15 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Don't pad where MSB of number is not set"],
+["0x02 0x0f00", "BIN2NUM 15 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Don't pad where MSB of number is not set"],
+["0x02 0x0f80", "BIN2NUM -15 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Don't pad where MSB of number is not set"],
+["0x05 0x0100800000", "BIN2NUM 8388609 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Ensure significant zero bytes are retained"],
+["0x05 0x0100800080", "BIN2NUM -8388609 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Ensure significant zero bytes are retained"],
+["0x05 0x01000f0000", "BIN2NUM 983041 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Ensure significant zero bytes are retained"],
+["0x05 0x01000f0080", "BIN2NUM -983041 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Ensure significant zero bytes are retained"],
+
+["0 0", "NUM2BIN 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "NUM2BIN, canonical argument "],
+["0 1", "NUM2BIN 0x01 0x00 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "NUM2BIN, zero extend"],
+["0 7", "NUM2BIN 0x07 0x00000000000000 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "NUM2BIN, zero extend"],
+["1 1", "NUM2BIN 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "NUM2BIN, canonical argument "],
+["-42 1", "NUM2BIN -42 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "NUM2BIN, canonical argument "],
+["-42 2", "NUM2BIN 0x02 0x2a80 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "NUM2BIN, canonical argument "],
+["-42 10", "NUM2BIN 0x0a 0x2a000000000000000080 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "NUM2BIN, large materialization"],
+["-42 520", "NUM2BIN", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Pushing 520 bytes is ok"],
+["0x05 0xabcdef4280 4", "NUM2BIN 0x04 0xabcdefc2 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Item size reduction"],
+["0x01 0x80 0", "NUM2BIN 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Negative zero"],
+["0x01 0x80 3", "NUM2BIN 0x03 0x000000 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Negative zero, larger output"],
+
+["1 1", "DIV 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["1 -1", "DIV -1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["-1 1", "DIV -1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["-1 -1", "DIV 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["2 2", "DIV 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["2 -2", "DIV -1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["-2 2", "DIV -1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["-2 -2", "DIV 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["0 1", "DIV 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["3 2", "DIV 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Round towards zero"],
+["3 -2", "DIV -1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Round towards zero"],
+["1 1", "DIV DEPTH 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Stack depth correct"],
+["1 1", "DIV 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+
+["1 1", "MOD 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["7 -3", "MOD 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["-7 3", "MOD -1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["10 3", "MOD 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["0 1", "MOD 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["1 1", "MOD DEPTH 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "Stack depth correct"],
+
+["'abcd' 'efgh'", "CAT 'abcdefgh' EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["'' ''", "CAT '' EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "CAT two empty strings"],
+["'abc' ''", "CAT 'abc' EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "CAT with empty string"],
+["'' 'def'", "CAT 'def' EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "CAT with empty string"],
+[
+  "'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxh' 'ataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh'",
+  "CAT 'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh' EQUAL",
+  "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "CAT, maximum length"
+],
+[
+  "'' 'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh'",
+  "CAT 'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh' EQUAL",
+  "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "CAT, maximum length with empty string"
+],
+[
+  "'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh' ''",
+  "CAT 'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh' EQUAL",
+  "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "CAT, maximum length with empty string"
+],
+
+["'abcdef' 3", "SPLIT 'def' EQUALVERIFY 'abc' EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK"],
+["'' 0", "SPLIT '' EQUALVERIFY '' EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "SPLIT, empty string"],
+["'abc' 0", "SPLIT 'abc' EQUALVERIFY '' EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "SPLIT, boundary condition"],
+["'abc' 3", "SPLIT '' EQUALVERIFY 'abc' EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "SPLIT, boundary condition"],
+[
+  "'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh'",
+  "145 SPLIT 'ataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh' EQUALVERIFY 'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxh' EQUAL",
+  "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "SPLIT, maximum length"
+],
+[
+  "'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh'",
+  "0 SPLIT 'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh' EQUALVERIFY '' EQUAL",
+  "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "SPLIT, maximum length with empty string"
+],
+[
+  "'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh'",
+  "520 SPLIT '' EQUALVERIFY 'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh' EQUAL",
+  "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "SPLIT, maximum length with empty string"
+],
+
+["'a' 'b'", "CAT 'ab' EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "CAT enabled"],
+["'a' 'b' 0", "IF CAT ELSE 1 ENDIF", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "CAT enabled"],
+["'abc' 1", "SPLIT 'bc' EQUALVERIFY 'a' EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "SPLIT enabled"],
+["'abc' 1 0", "IF SPLIT ELSE 1 ENDIF", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "SPLIT enabled"],
+["'abc' 2 0", "IF NUM2BIN ELSE 1 ENDIF", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "NUM2BIN enabled"],
+["'abc' 2 0", "IF BIN2NUM ELSE 1 ENDIF", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "BIN2NUM enabled"],
+
+["1 2 0 IF AND ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "AND enabled"],
+["1 2 0 IF OR ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "OR enabled"],
+["1 2 0 IF XOR ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "XOR enabled"],
+["2 2 0 IF DIV ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "DIV enabled"],
+["2 2 0 IF MOD ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC,MONOLITH_OPCODES", "OK", "MOD enabled"]
+
+
+
 ]

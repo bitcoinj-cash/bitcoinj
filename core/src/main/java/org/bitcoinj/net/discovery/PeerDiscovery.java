@@ -29,7 +29,7 @@ public interface PeerDiscovery {
 
     /**
      * Returns an array of addresses. This method may block.
-     * @param services Required services as a bitmask, e.g. {@link VersionMessage#NODE_NETWORK}.
+     * @param services Required services as a bitmask, e.g. {@link org.bitcoinj.core.VersionMessage#NODE_NETWORK}.
      */
     InetSocketAddress[] getPeers(long services, long timeoutValue, TimeUnit timeoutUnit) throws PeerDiscoveryException;
 

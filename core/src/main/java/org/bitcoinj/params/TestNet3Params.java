@@ -17,18 +17,10 @@
 
 package org.bitcoinj.params;
 
-import java.math.BigInteger;
-import java.util.Date;
-
-import com.google.common.base.Preconditions;
-import org.bitcoinj.core.AbstractBlockChain;
 import org.bitcoinj.core.Block;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.core.Utils;
-import org.bitcoinj.core.VerificationException;
-import org.bitcoinj.store.BlockStore;
-import org.bitcoinj.store.BlockStoreException;
+
+import java.util.Date;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -62,6 +54,7 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         dnsSeeds = new String[] {
                "testnet-seed.bitcoinabc.org",
                 "testnet-seed-abc.bitcoinforks.org",
+                "testnet-seed.bitcoinunlimited.info",
                 "testnet-seed.bitprim.org",
                 "testnet-seed.deadalnix.me",
                 "testnet-seeder.criptolayer.net"
@@ -76,10 +69,9 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
 
         // Aug, 1 hard fork
         uahfHeight = 1155876;
-
-        /** Activation time at which the cash HF kicks in. */
-        cashHardForkActivationTime = 1510600000;
-        daaHeight = 1188697;
+        // Nov, 13 hard fork
+        daaUpdateHeight = 1188697;
+        cashAddrPrefix = "bchtest";
     }
 
     private static TestNet3Params instance;
@@ -98,91 +90,8 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
     // February 16th 2012
     private static final Date testnetDiffDate = new Date(1329264000000L);
 
-    @Override
-    public void checkDifficultyTransitions(final StoredBlock storedPrev, final Block nextBlock,
-                                           final BlockStore blockStore, AbstractBlockChain blockChain) throws VerificationException, BlockStoreException {
-        if (storedPrev.getHeight() < daaHeight && !isDifficultyTransitionPoint(storedPrev) && nextBlock.getTime().after(testnetDiffDate)) {
-            Block prev = storedPrev.getHeader();
-
-            // After 15th February 2012 the rules on the testnet change to avoid people running up the difficulty
-            // and then leaving, making it too hard to mine a block. On non-difficulty transition points, easy
-            // blocks are allowed if there has been a span of 20 minutes without one.
-            final long timeDelta = nextBlock.getTimeSeconds() - prev.getTimeSeconds();
-            // There is an integer underflow bug in bitcoin-qt that means mindiff blocks are accepted when time
-            // goes backwards.
-            if (timeDelta >= 0 && timeDelta <= NetworkParameters.TARGET_SPACING * 2) {
-        	// Walk backwards until we find a block that doesn't have the easiest proof of work, then check
-        	// that difficulty is equal to that one.
-        	StoredBlock cursor = storedPrev;
-        	while (!cursor.getHeader().equals(getGenesisBlock()) &&
-                       cursor.getHeight() % getInterval() != 0 &&
-                       cursor.getHeader().getDifficultyTargetAsInteger().equals(getMaxTarget()))
-                    cursor = cursor.getPrev(blockStore);
-        	BigInteger cursorTarget = cursor.getHeader().getDifficultyTargetAsInteger();
-        	BigInteger newTarget = nextBlock.getDifficultyTargetAsInteger();
-        	if (!cursorTarget.equals(newTarget))
-                    throw new VerificationException("Testnet block transition that is not allowed: " +
-                	Long.toHexString(cursor.getHeader().getDifficultyTarget()) + " vs " +
-                	Long.toHexString(nextBlock.getDifficultyTarget()));
-            }
-        } else {
-            super.checkDifficultyTransitions(storedPrev, nextBlock, blockStore, blockChain);
-        }
+    public static boolean isValidTestnetDateBlock(Block block){
+        return block.getTime().after(testnetDiffDate);
     }
-    @Override
-    protected void checkNextCashWorkRequired(StoredBlock storedPrev,
-                                             Block newBlock, BlockStore blockStore) {
-        // This cannot handle the genesis block and early blocks in general.
-        //assert(pindexPrev);
 
-
-
-        // Compute the difficulty based on the full adjustement interval.
-        int height = storedPrev.getHeight();
-        Preconditions.checkState(height >= this.interval);
-
-        // Get the last suitable block of the difficulty interval.
-        try {
-
-            // Special difficulty rule for testnet:
-            // If the new block's timestamp is more than 2* 10 minutes then allow
-            // mining of a min-difficulty block.
-
-            Block prev = storedPrev.getHeader();
-
-            final long timeDelta = newBlock.getTimeSeconds() - prev.getTimeSeconds();
-            if (timeDelta >= 0 && timeDelta > NetworkParameters.TARGET_SPACING * 2) {
-                if (!maxTarget.equals(newBlock.getDifficultyTargetAsInteger()))
-                    throw new VerificationException("Testnet block transition that is not allowed: " +
-                            Long.toHexString(Utils.encodeCompactBits(maxTarget)) + " (required min difficulty) vs " +
-                            Long.toHexString(newBlock.getDifficultyTarget()));
-                return;
-            }
-
-            StoredBlock lastBlock = GetSuitableBlock(storedPrev, blockStore);
-
-            // Get the first suitable block of the difficulty interval.
-            StoredBlock firstBlock = storedPrev;
-
-            for (int i = 144; i > 0; --i)
-            {
-                firstBlock = firstBlock.getPrev(blockStore);
-                if(firstBlock == null)
-                    return;
-            }
-
-            firstBlock = GetSuitableBlock(firstBlock, blockStore);
-
-            // Compute the target based on time and work done during the interval.
-            BigInteger nextTarget =
-                    ComputeTarget(firstBlock, lastBlock);
-
-            verifyDifficulty(nextTarget, newBlock);
-        }
-        catch (BlockStoreException x)
-        {
-            //this means we don't have enough blocks, yet.  let it go until we do.
-            return;
-        }
-    }
 }

@@ -135,7 +135,7 @@ public class ScriptBuilder {
      * Adds the given number as a OP_N opcode to the end of the program.
      * Only handles values 0-16 inclusive.
      * 
-     * @see #number(int)
+     * @see #number(long)
      */
     public ScriptBuilder smallNum(int num) {
         return smallNum(chunks.size(), num);
@@ -146,7 +146,7 @@ public class ScriptBuilder {
      * it will accept numbers in the range 0-16 inclusive, the encoding would be
      * considered non-standard.
      * 
-     * @see #number(int)
+     * @see #number(long)
      */
     protected ScriptBuilder bigNum(long num) {
         return bigNum(chunks.size(), num);
@@ -156,7 +156,7 @@ public class ScriptBuilder {
      * Adds the given number as a OP_N opcode to the given index in the program.
      * Only handles values 0-16 inclusive.
      * 
-     * @see #number(int)
+     * @see #number(long)
      */
     public ScriptBuilder smallNum(int index, int num) {
         checkArgument(num >= 0, "Cannot encode negative numbers with smallNum");
@@ -170,7 +170,7 @@ public class ScriptBuilder {
      * it will accept numbers in the range 0-16 inclusive, the encoding would be
      * considered non-standard.
      * 
-     * @see #number(int)
+     * @see #number(long)
      */
     protected ScriptBuilder bigNum(int index, long num) {
         final byte[] data;
@@ -291,7 +291,7 @@ public class ScriptBuilder {
 
     /** Create a program that satisfies an OP_CHECKMULTISIG program, using pre-encoded signatures. */
     public static Script createMultiSigInputScriptBytes(List<byte[]> signatures) {
-    	return createMultiSigInputScriptBytes(signatures, null);
+        return createMultiSigInputScriptBytes(signatures, null);
     }
 
     /**
@@ -325,7 +325,7 @@ public class ScriptBuilder {
         for (byte[] signature : signatures)
             builder.data(signature);
         if (multisigProgramBytes!= null)
-        	builder.data(multisigProgramBytes);
+            builder.data(multisigProgramBytes);
         return builder.build();
     }
 

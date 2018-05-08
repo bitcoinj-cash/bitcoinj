@@ -551,7 +551,7 @@ public class PaymentChannelServer {
      * resume this channel in the future and stops generating messages for the client.</p>
      *
      * <p>Note that this <b>MUST</b> still be called even after either
-     * {@link ServerConnection#destroyConnection(CloseReason)} or
+     * {@link ServerConnection#destroyConnection(PaymentChannelCloseException.CloseReason)} or
      * {@link PaymentChannelServer#close()} is called to actually handle the connection close logic.</p>
      */
     public void connectionClosed() {
@@ -594,7 +594,7 @@ public class PaymentChannelServer {
 
     /**
      * <p>Closes the connection by generating a settle message for the client and calls
-     * {@link ServerConnection#destroyConnection(CloseReason)}. Note that this does not broadcast
+     * {@link ServerConnection#destroyConnection(PaymentChannelCloseException.CloseReason)}. Note that this does not broadcast
      * the payment transaction and the client may still resume the same channel if they reconnect</p>
      * <p>
      * <p>Note that {@link PaymentChannelServer#connectionClosed()} must still be called after the connection fully

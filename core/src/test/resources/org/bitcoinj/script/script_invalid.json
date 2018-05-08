@@ -113,12 +113,26 @@
 ["NOP", "2SWAP 1", "P2SH,STRICTENC"],
 ["1", "2 3 2SWAP 1", "P2SH,STRICTENC"],
 
+
+["0", "AND 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "AND, invalid parameter count"],
+["", "AND 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "AND, empty stack"],
+["0 1", "AND 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OPERAND_SIZE", "AND, different operand size"],
+
+["0", "OR 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "OR, invalid parameter count"],
+["", "OR 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "OR, empty stack"],
+["0 1", "OR 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OPERAND_SIZE", "OR, different operand size"],
+
+["0", "XOR 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "XOR, invalid parameter count"],
+["", "XOR 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "XOR, empty stack"],
+["0 1", "XOR 1 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "OPERAND_SIZE", "XOR, different operand size"],
+
+
 ["'a' 'b'", "CAT", "P2SH,STRICTENC", "CAT disabled"],
 ["'a' 'b' 0", "IF CAT ELSE 1 ENDIF", "P2SH,STRICTENC", "CAT disabled"],
-["'abc' 1 1", "SUBSTR", "P2SH,STRICTENC", "SUBSTR disabled"],
-["'abc' 1 1 0", "IF SUBSTR ELSE 1 ENDIF", "P2SH,STRICTENC", "SUBSTR disabled"],
-["'abc' 2 0", "IF LEFT ELSE 1 ENDIF", "P2SH,STRICTENC", "LEFT disabled"],
-["'abc' 2 0", "IF RIGHT ELSE 1 ENDIF", "P2SH,STRICTENC", "RIGHT disabled"],
+["'abc' 1 1", "SPLIT", "P2SH,STRICTENC", "SPLIT disabled"],
+["'abc' 1 1 0", "IF SPLIT ELSE 1 ENDIF", "P2SH,STRICTENC", "SPLIT disabled"],
+["'abc' 2 0", "IF NUM2BIN ELSE 1 ENDIF", "P2SH,STRICTENC", "NUM2BIN disabled"],
+["'abc' 2 0", "IF BIN2NUM ELSE 1 ENDIF", "P2SH,STRICTENC", "BIN2NUM disabled"],
 
 ["NOP", "SIZE 1", "P2SH,STRICTENC"],
 
@@ -141,6 +155,7 @@
 ["2147483648 0 ADD", "NOP", "P2SH,STRICTENC", "arithmetic operands must be in range [-2^31...2^31] "],
 ["-2147483648 0 ADD", "NOP", "P2SH,STRICTENC", "arithmetic operands must be in range [-2^31...2^31] "],
 ["2147483647 DUP ADD", "4294967294 NUMEQUAL", "P2SH,STRICTENC", "NUMEQUAL must be in numeric range"],
+
 ["'abcdef' NOT", "0 EQUAL", "P2SH,STRICTENC", "NOT is an arithmetic operand"],
 
 ["2 DUP MUL", "4 EQUAL", "P2SH,STRICTENC", "disabled"],
@@ -373,5 +388,65 @@
 ["0 0x01 0x50", "HASH160 0x14 0xece424a6bb6ddf4db592c0faed60685047a361b1 EQUAL", "P2SH,STRICTENC", "OP_RESERVED in P2SH should fail"],
 ["0 0x01 VER", "HASH160 0x14 0x0f4d7845db968f2a81b530b6f3c1d6246d4c7e01 EQUAL", "P2SH,STRICTENC", "OP_VER in P2SH should fail"],
 
-["0x00", "'00' EQUAL", "P2SH,STRICTENC", "Basic OP_0 execution"]
+["0x00", "'00' EQUAL", "P2SH,STRICTENC", "Basic OP_0 execution"],
+
+
+["", "BIN2NUM 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "BIN2NUM, empty stack"],
+["0x05 0xffffffff00", "BIN2NUM 2147483647 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_NUMBER_RANGE", "BIN2NUM, oversized arguement"],
+
+["", "NUM2BIN 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "NUM2BIN, empty stack"],
+["0", "NUM2BIN 0 EQUAL", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "NUM2BIN, one parameter"],
+["-42 521", "NUM2BIN", "P2SH,STRICTENC,MONOLITH_OPCODES", "PUSH_SIZE", "Pushing 521 bytes is not"],
+["-42 -3", "NUM2BIN", "P2SH,STRICTENC,MONOLITH_OPCODES", "PUSH_SIZE", "Negative size"],
+
+["1 0", "DIV", "P2SH,STRICTENC,MONOLITH_OPCODES", "DIV_BY_ZERO", "DIV, divide by zero"],
+["1", "DIV", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "Not enough operands"],
+["0", "DIV", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "Not enough operands"],
+["2147483648 1", "DIV", "P2SH,STRICTENC,MONOLITH_OPCODES", "UNKNOWN_ERROR", "We cannot do math on 5-byte integers"],
+["1 2147483648", "DIV", "P2SH,STRICTENC,MONOLITH_OPCODES", "UNKNOWN_ERROR", "We cannot do math on 5-byte integers"],
+
+["1 0", "MOD", "P2SH,STRICTENC,MONOLITH_OPCODES", "MOD_BY_ZERO", "MOD, modulo by zero"],
+["1", "MOD", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "Not enough operands"],
+["0", "MOD", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "Not enough operands"],
+["2147483648 1", "MOD", "P2SH,STRICTENC,MONOLITH_OPCODES", "UNKNOWN_ERROR", "We cannot do math on 5-byte integers"],
+["1 2147483648", "MOD", "P2SH,STRICTENC,MONOLITH_OPCODES", "UNKNOWN_ERROR", "We cannot do math on 5-byte integers"],
+
+["", "CAT", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "CAT, empty stack"],
+["'a'", "CAT", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "CAT, one parameter"],
+[
+    "'a' 'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh'",
+    "CAT",
+    "P2SH,STRICTENC,MONOLITH_OPCODES", "PUSH_SIZE", "CAT oversized result"
+],
+
+["", "SPLIT", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "SPLIT, empty stack"],
+["'a'", "SPLIT", "P2SH,STRICTENC,MONOLITH_OPCODES", "INVALID_STACK_OPERATION", "SPLIT, one parameter"],
+["'abc' 4", "SPLIT", "P2SH,STRICTENC,MONOLITH_OPCODES", "SPLIT_RANGE", "SPLIT, out of bounds"],
+["'abc' -1", "SPLIT", "P2SH,STRICTENC,MONOLITH_OPCODES", "SPLIT_RANGE", "SPLIT, out of bounds"],
+
+["'a' 'b'", "CAT", "P2SH,STRICTENC", "DISABLED_OPCODE", "CAT disabled"],
+["'a' 'b' 0", "IF CAT ELSE 1 ENDIF", "P2SH,STRICTENC", "DISABLED_OPCODE", "CAT disabled"],
+["'abc' 1", "SPLIT", "P2SH,STRICTENC", "DISABLED_OPCODE", "SPLIT disabled"],
+["'abc' 1 0", "IF SPLIT ELSE 1 ENDIF", "P2SH,STRICTENC", "DISABLED_OPCODE", "SPLIT disabled"],
+["'abc' 2 0", "IF NUM2BIN ELSE 1 ENDIF", "P2SH,STRICTENC", "DISABLED_OPCODE", "NUM2BIN disabled"],
+["'abc' 2 0", "IF BIN2NUM ELSE 1 ENDIF", "P2SH,STRICTENC", "DISABLED_OPCODE", "BIN2NUM disabled"],
+
+["'abc'", "IF INVERT ELSE 1 ENDIF", "P2SH,STRICTENC", "DISABLED_OPCODE", "INVERT disabled"],
+["'abc'", "IF INVERT ELSE 1 ENDIF", "P2SH,STRICTENC,MONOLITH_OPCODES", "DISABLED_OPCODE", "INVERT disabled"],
+["1 2 0 IF AND ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC", "DISABLED_OPCODE", "AND disabled"],
+["1 2 0 IF OR ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC", "DISABLED_OPCODE", "OR disabled"],
+["1 2 0 IF XOR ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC", "DISABLED_OPCODE", "XOR disabled"],
+["2 0 IF 2MUL ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC", "DISABLED_OPCODE", "2MUL disabled"],
+["2 0 IF 2MUL ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC,MONOLITH_OPCODES", "DISABLED_OPCODE", "2MUL disabled"],
+["2 0 IF 2DIV ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC", "DISABLED_OPCODE", "2DIV disabled"],
+["2 0 IF 2DIV ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC,MONOLITH_OPCODES", "DISABLED_OPCODE", "2DIV disabled"],
+["2 2 0 IF MUL ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC", "DISABLED_OPCODE", "MUL disabled"],
+["2 2 0 IF MUL ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC,MONOLITH_OPCODES", "DISABLED_OPCODE", "MUL disabled"],
+["2 2 0 IF DIV ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC", "DISABLED_OPCODE", "DIV disabled"],
+["2 2 0 IF MOD ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC", "DISABLED_OPCODE", "MOD disabled"],
+["2 2 0 IF LSHIFT ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC", "DISABLED_OPCODE", "LSHIFT disabled"],
+["2 2 0 IF LSHIFT ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC,MONOLITH_OPCODES", "DISABLED_OPCODE", "LSHIFT disabled"],
+["2 2 0 IF RSHIFT ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC", "DISABLED_OPCODE", "RSHIFT disabled"],
+["2 2 0 IF RSHIFT ELSE 1 ENDIF", "NOP", "P2SH,STRICTENC,MONOLITH_OPCODES", "DISABLED_OPCODE", "RSHIFT disabled"]
+
 ]

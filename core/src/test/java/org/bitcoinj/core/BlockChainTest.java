@@ -62,7 +62,6 @@ public class BlockChainTest {
     private static class TweakableTestNet2Params extends TestNet2Params {
         public TweakableTestNet2Params() {
             super();
-            this.cashHardForkActivationTime = (System.currentTimeMillis()/1000)+24*60*60;
         }
         public void setMaxTarget(BigInteger limit) {
             maxTarget = limit;
