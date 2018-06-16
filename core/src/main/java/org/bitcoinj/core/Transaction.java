@@ -197,9 +197,18 @@ public class Transaction extends ChildMessage {
 
     public Transaction(NetworkParameters params) {
         super(params);
-        version = 1;
-        inputs = new ArrayList<TransactionInput>();
-        outputs = new ArrayList<TransactionOutput>();
+        this.version = CURRENT_VERSION;
+        inputs = new ArrayList<>();
+        outputs = new ArrayList<>();
+        // We don't initialize appearsIn deliberately as it's only useful for transactions stored in the wallet.
+        length = 8; // 8 for std fields
+    }
+
+    public Transaction(NetworkParameters params, long version) {
+        super(params);
+        this.version = version;
+        inputs = new ArrayList<>();
+        outputs = new ArrayList<>();
         // We don't initialize appearsIn deliberately as it's only useful for transactions stored in the wallet.
         length = 8; // 8 for std fields
     }

@@ -164,6 +164,10 @@ message ProvideRefund {
     // * It must have exactly one output which goes back to the primary.  This output's
     //   scriptPubKey will be reused to create payment transactions.
     required bytes tx = 2;
+
+    // the amount of the input in the return transaction, in satoshis
+    // this is required to generate a signature on the return transaction
+    required uint64 amount = 3; // amount is integer-number-of-satoshis
 }
 
 // Sent from secondary to primary after it has done initial verification of the refund

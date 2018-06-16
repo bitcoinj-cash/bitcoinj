@@ -201,7 +201,7 @@ public class ChannelConnectionTest extends TestWithWallet {
 
         // Wait for the multi-sig tx to be transmitted.
         broadcastTxPause.release();
-        Transaction broadcastMultiSig = broadcasts.take();
+        Transaction broadcastMultiSig = broadcasts.poll(1, TimeUnit.SECONDS);
         // Wait for the channel to finish opening.
         client.getChannelOpenFuture().get();
         assertEquals(broadcastMultiSig.getHash(), channelOpenFuture.get());

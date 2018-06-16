@@ -118,7 +118,7 @@ public class PaymentChannelV1ServerState extends PaymentChannelServerState {
      * @return Our signature that makes the refund transaction valid
      * @throws VerificationException If the transaction isnt valid or did not meet the requirements of a refund transaction.
      */
-    public synchronized byte[] provideRefundTransaction(Transaction refundTx, byte[] clientMultiSigPubKey) throws VerificationException {
+    public synchronized byte[] provideRefundTransaction(Transaction refundTx, Coin inputValue, byte[] clientMultiSigPubKey) throws VerificationException {
         checkNotNull(refundTx);
         checkNotNull(clientMultiSigPubKey);
         stateMachine.checkState(State.WAITING_FOR_REFUND_TRANSACTION);
@@ -148,7 +148,7 @@ public class PaymentChannelV1ServerState extends PaymentChannelServerState {
         // We are really only signing the fact that the transaction has a proper lock time and don't care about anything
         // else, so we sign SIGHASH_NONE and SIGHASH_ANYONECANPAY.
         TransactionSignature sig = refundTx.getVersion() >= Transaction.FORKID_VERSION ?
-                refundTx.calculateWitnessSignature(0, serverKey, multisigPubKey, refundTx.getInput(0).getConnectedOutput().getValue(), Transaction.SigHash.NONE, true):
+                refundTx.calculateWitnessSignature(0, serverKey, multisigPubKey, inputValue, Transaction.SigHash.NONE, true):
                 refundTx.calculateSignature(0, serverKey, multisigPubKey, Transaction.SigHash.NONE, true);
         log.info("Signed refund transaction.");
         this.clientOutput = refundTx.getOutput(0);
