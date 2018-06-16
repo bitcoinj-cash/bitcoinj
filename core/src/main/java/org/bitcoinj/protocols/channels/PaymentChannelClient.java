@@ -335,7 +335,8 @@ public class PaymentChannelClient implements IPaymentChannelClient {
 
                 Protos.ProvideRefund.Builder provideRefundBuilder = Protos.ProvideRefund.newBuilder()
                         .setMultisigKey(ByteString.copyFrom(myKey.getPubKey()))
-                        .setTx(ByteString.copyFrom(((PaymentChannelV1ClientState)state).getIncompleteRefundTransaction().unsafeBitcoinSerialize()));
+                        .setTx(ByteString.copyFrom(((PaymentChannelV1ClientState)state).getIncompleteRefundTransaction().unsafeBitcoinSerialize()))
+                        .setAmount(((PaymentChannelV1ClientState)state).getTotalValue().value);
 
                 conn.sendToServer(Protos.TwoWayChannelMessage.newBuilder()
                         .setProvideRefund(provideRefundBuilder)

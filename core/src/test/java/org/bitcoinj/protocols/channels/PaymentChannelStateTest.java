@@ -39,6 +39,7 @@ import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static org.bitcoinj.core.Coin.*;
 import static org.bitcoinj.testing.FakeTxBuilder.createFakeTx;
@@ -238,7 +239,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         Transaction refund;
         if (useRefunds()) {
             refund = new Transaction(PARAMS, clientV1State().getIncompleteRefundTransaction().bitcoinSerialize());
-            byte[] refundSig = serverV1State().provideRefundTransaction(refund, myKey.getPubKey());
+            byte[] refundSig = serverV1State().provideRefundTransaction(refund, HALF_COIN, myKey.getPubKey());
             assertEquals(PaymentChannelServerState.State.WAITING_FOR_MULTISIG_CONTRACT, serverState.getState());
             // This verifies that the refund can spend the multi-sig output when run.
             clientV1State().provideRefundSignature(refundSig, null);
@@ -269,7 +270,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         }
         serverState.provideContract(multisigContract);
         assertEquals(PaymentChannelServerState.State.WAITING_FOR_MULTISIG_ACCEPTANCE, serverState.getState());
-        final TxFuturePair pair = broadcasts.take();
+        final TxFuturePair pair = broadcasts.poll(1, TimeUnit.SECONDS);
         pair.future.set(pair.tx);
         assertEquals(PaymentChannelServerState.State.READY, serverState.getState());
 
@@ -305,7 +306,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         // And settle the channel.
         serverState.close();
         assertEquals(PaymentChannelServerState.State.CLOSING, serverState.getState());
-        final TxFuturePair pair2 = broadcasts.take();
+        final TxFuturePair pair2 = broadcasts.poll(1, TimeUnit.SECONDS);
         Transaction closeTx = pair2.tx;
         pair2.future.set(closeTx);
         final Transaction reserializedCloseTx = new Transaction(PARAMS, closeTx.bitcoinSerialize());
@@ -365,7 +366,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         if (useRefunds()) {
             // Send the refund tx from client to server and get back the signature.
             Transaction refund = new Transaction(PARAMS, clientV1State().getIncompleteRefundTransaction().bitcoinSerialize());
-            byte[] refundSig = serverV1State().provideRefundTransaction(refund, myKey.getPubKey());
+            byte[] refundSig = serverV1State().provideRefundTransaction(refund, CENT.divide(2), myKey.getPubKey());
             assertEquals(PaymentChannelServerState.State.WAITING_FOR_MULTISIG_CONTRACT, serverState.getState());
             // This verifies that the refund can spend the multi-sig output when run.
             clientV1State().provideRefundSignature(refundSig, null);
@@ -394,7 +395,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         }
         serverState.provideContract(multisigContract);
         assertEquals(PaymentChannelServerState.State.WAITING_FOR_MULTISIG_ACCEPTANCE, serverState.getState());
-        final TxFuturePair pop = broadcasts.take();
+        final TxFuturePair pop = broadcasts.poll(1, TimeUnit.SECONDS);
         pop.future.set(pop.tx);
         assertEquals(PaymentChannelServerState.State.READY, serverState.getState());
 
@@ -406,7 +407,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         Utils.rollMockClock(60*60*22);
         // ... and store server to get it to broadcast payment transaction
         serverState.storeChannelInWallet(null);
-        TxFuturePair broadcastPaymentPair = broadcasts.take();
+        TxFuturePair broadcastPaymentPair = broadcasts.poll(1, TimeUnit.SECONDS);
         Exception paymentException = new RuntimeException("I'm sorry, but the network really just doesn't like you");
         broadcastPaymentPair.future.setException(paymentException);
         try {
@@ -421,8 +422,8 @@ public class PaymentChannelStateTest extends TestWithWallet {
 
         // Now store the client state in a stored state object which handles the rebroadcasting
         clientState.doStoreChannelInWallet(Sha256Hash.of(new byte[]{}));
-        TxFuturePair clientBroadcastedMultiSig = broadcasts.take();
-        TxFuturePair broadcastRefund = broadcasts.take();
+        TxFuturePair clientBroadcastedMultiSig = broadcasts.poll(1, TimeUnit.SECONDS);
+        TxFuturePair broadcastRefund = broadcasts.poll(1, TimeUnit.SECONDS);
         assertEquals(clientBroadcastedMultiSig.tx.getHash(), multisigContract.getHash());
         for (TransactionInput input : clientBroadcastedMultiSig.tx.getInputs())
             input.verify();
@@ -474,7 +475,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
             Transaction refund = new Transaction(PARAMS, refundTxBytes);
             refund.addOutput(Coin.ZERO, new ECKey().toAddress(PARAMS));
             try {
-                serverV1State().provideRefundTransaction(refund, myKey.getPubKey());
+                serverV1State().provideRefundTransaction(refund, HALF_COIN, myKey.getPubKey());
                 fail();
             } catch (VerificationException e) {
             }
@@ -482,7 +483,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
             refund = new Transaction(PARAMS, refundTxBytes);
             refund.addInput(new TransactionInput(PARAMS, refund, new byte[]{}, new TransactionOutPoint(PARAMS, 42, refund.getHash())));
             try {
-                serverV1State().provideRefundTransaction(refund, myKey.getPubKey());
+                serverV1State().provideRefundTransaction(refund, HALF_COIN, myKey.getPubKey());
                 fail();
             } catch (VerificationException e) {
             }
@@ -490,7 +491,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
             refund = new Transaction(PARAMS, refundTxBytes);
             refund.setLockTime(0);
             try {
-                serverV1State().provideRefundTransaction(refund, myKey.getPubKey());
+                serverV1State().provideRefundTransaction(refund, HALF_COIN, myKey.getPubKey());
                 fail();
             } catch (VerificationException e) {
             }
@@ -498,15 +499,15 @@ public class PaymentChannelStateTest extends TestWithWallet {
             refund = new Transaction(PARAMS, refundTxBytes);
             refund.getInput(0).setSequenceNumber(TransactionInput.NO_SEQUENCE);
             try {
-                serverV1State().provideRefundTransaction(refund, myKey.getPubKey());
+                serverV1State().provideRefundTransaction(refund, HALF_COIN, myKey.getPubKey());
                 fail();
             } catch (VerificationException e) {
             }
 
             refund = new Transaction(PARAMS, refundTxBytes);
-            byte[] refundSig = serverV1State().provideRefundTransaction(refund, myKey.getPubKey());
+            byte[] refundSig = serverV1State().provideRefundTransaction(refund, HALF_COIN, myKey.getPubKey());
             try {
-                serverV1State().provideRefundTransaction(refund, myKey.getPubKey());
+                serverV1State().provideRefundTransaction(refund, HALF_COIN, myKey.getPubKey());
                 fail();
             } catch (IllegalStateException e) {
             }
@@ -610,7 +611,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         try { serverState.provideContract(multisigContract); fail(); } catch (IllegalStateException e) {}
         assertEquals(PaymentChannelServerState.State.WAITING_FOR_MULTISIG_ACCEPTANCE, serverState.getState());
         assertFalse(multisigStateFuture.isDone());
-        final TxFuturePair pair = broadcasts.take();
+        final TxFuturePair pair = broadcasts.poll(1, TimeUnit.SECONDS);
         pair.future.set(pair.tx);
         assertEquals(multisigStateFuture.get(), serverState);
         assertEquals(PaymentChannelServerState.State.READY, serverState.getState());
@@ -742,7 +743,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         if (useRefunds()) {
             // Send the refund tx from client to server and get back the signature.
             Transaction refund = new Transaction(PARAMS, clientV1State().getIncompleteRefundTransaction().bitcoinSerialize());
-            byte[] refundSig = serverV1State().provideRefundTransaction(refund, myKey.getPubKey());
+            byte[] refundSig = serverV1State().provideRefundTransaction(refund, CENT, myKey.getPubKey());
             assertEquals(PaymentChannelServerState.State.WAITING_FOR_MULTISIG_CONTRACT, serverState.getState());
             // This verifies that the refund can spend the multi-sig output when run.
             clientV1State().provideRefundSignature(refundSig, null);
@@ -761,7 +762,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         }
         serverState.provideContract(multisigContract);
         assertEquals(PaymentChannelServerState.State.WAITING_FOR_MULTISIG_ACCEPTANCE, serverState.getState());
-        TxFuturePair pair = broadcasts.take();
+        TxFuturePair pair = broadcasts.poll(1, TimeUnit.SECONDS);
         pair.future.set(pair.tx);
         assertEquals(PaymentChannelServerState.State.READY, serverState.getState());
 
@@ -797,7 +798,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         // And settle the channel.
         serverState.close();
         assertEquals(PaymentChannelServerState.State.CLOSING, serverState.getState());
-        pair = broadcasts.take();  // settle
+        pair = broadcasts.poll(1, TimeUnit.SECONDS);  // settle
         pair.future.set(pair.tx);
         assertEquals(PaymentChannelServerState.State.CLOSED, serverState.getState());
         serverState.close();
@@ -841,7 +842,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         if (useRefunds()) {
             // Send the refund tx from client to server and get back the signature.
             Transaction refund = new Transaction(PARAMS, clientV1State().getIncompleteRefundTransaction().bitcoinSerialize());
-            byte[] refundSig = serverV1State().provideRefundTransaction(refund, myKey.getPubKey());
+            byte[] refundSig = serverV1State().provideRefundTransaction(refund, CENT, myKey.getPubKey());
             assertEquals(PaymentChannelServerState.State.WAITING_FOR_MULTISIG_CONTRACT, serverState.getState());
             // This verifies that the refund can spend the multi-sig output when run.
             clientV1State().provideRefundSignature(refundSig, null);
@@ -870,7 +871,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         }
         serverState.provideContract(multisigContract);
         assertEquals(PaymentChannelServerState.State.WAITING_FOR_MULTISIG_ACCEPTANCE, serverState.getState());
-        TxFuturePair pair = broadcasts.take();
+        TxFuturePair pair = broadcasts.poll(1, TimeUnit.SECONDS);
         pair.future.set(pair.tx);
         assertEquals(PaymentChannelServerState.State.READY, serverState.getState());
 
@@ -905,7 +906,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         // And settle the channel.
         serverState.close();
         assertEquals(PaymentChannelServerState.State.CLOSING, serverState.getState());
-        pair = broadcasts.take();
+        pair = broadcasts.poll(1, TimeUnit.SECONDS);
         pair.future.set(pair.tx);
         assertEquals(PaymentChannelServerState.State.CLOSED, serverState.getState());
     }
@@ -930,7 +931,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         if (useRefunds()) {
             refund = new Transaction(PARAMS, clientV1State().getIncompleteRefundTransaction().bitcoinSerialize());
             // Send the refund tx from client to server and get back the signature.
-            byte[] refundSig = serverV1State().provideRefundTransaction(refund, myKey.getPubKey());
+            byte[] refundSig = serverV1State().provideRefundTransaction(refund, HALF_COIN, myKey.getPubKey());
             assertEquals(PaymentChannelV1ServerState.State.WAITING_FOR_MULTISIG_CONTRACT, serverState.getState());
             // This verifies that the refund can spend the multi-sig output when run.
             clientV1State().provideRefundSignature(refundSig, null);
@@ -961,7 +962,7 @@ public class PaymentChannelStateTest extends TestWithWallet {
         }
         serverState.provideContract(multisigContract);
         assertEquals(PaymentChannelServerState.State.WAITING_FOR_MULTISIG_ACCEPTANCE, serverState.getState());
-        final TxFuturePair pair = broadcasts.take();
+        final TxFuturePair pair = broadcasts.poll(1, TimeUnit.SECONDS);
         pair.future.set(pair.tx);
         assertEquals(PaymentChannelServerState.State.READY, serverState.getState());
 

@@ -407,15 +407,19 @@ public class TransactionInput extends ChildMessage {
      * @throws VerificationException If the outpoint doesn't match the given output.
      */
     public void verify(TransactionOutput output) throws VerificationException {
+        Coin inputValue = Coin.ZERO;
         if (output.parent != null) {
             if (!getOutpoint().getHash().equals(output.getParentTransaction().getHash()))
                 throw new VerificationException("This input does not refer to the tx containing the output.");
             if (getOutpoint().getIndex() != output.getIndex())
                 throw new VerificationException("This input refers to a different output on the given tx.");
+            if (getOutpoint().getConnectedOutput() != null) {
+                inputValue =getOutpoint().getConnectedOutput().getValue();
+            }
         }
         Script pubKey = output.getScriptPubKey();
         int myIndex = getParentTransaction().getInputs().indexOf(this);
-        getScriptSig().correctlySpends(getParentTransaction(), myIndex, pubKey);
+        getScriptSig().correctlySpends(getParentTransaction(), myIndex, pubKey, inputValue, Script.ALL_VERIFY_FLAGS);
     }
 
     /**

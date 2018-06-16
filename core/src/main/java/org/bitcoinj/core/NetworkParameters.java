@@ -126,7 +126,7 @@ public abstract class NetworkParameters {
 
     private static Block createGenesis(NetworkParameters n) {
         Block genesisBlock = new Block(n, Block.BLOCK_VERSION_GENESIS);
-        Transaction t = new Transaction(n);
+        Transaction t = new Transaction(n, 1);
         try {
             // A script containing the difficulty bits and the following message:
             //

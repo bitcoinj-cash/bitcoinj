@@ -321,6 +321,7 @@ public class PaymentChannelServer {
         // We can cast to V1 state since this state is only used in the V1 protocol
         byte[] signature = ((PaymentChannelV1ServerState) state)
                 .provideRefundTransaction(wallet.getParams().getDefaultSerializer().makeTransaction(providedRefund.getTx().toByteArray()),
+                        Coin.valueOf(providedRefund.getAmount()),
                         providedRefund.getMultisigKey().toByteArray());
 
         step = InitStep.WAITING_ON_CONTRACT;
