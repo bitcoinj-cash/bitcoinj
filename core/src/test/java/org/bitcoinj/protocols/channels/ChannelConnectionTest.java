@@ -201,7 +201,7 @@ public class ChannelConnectionTest extends TestWithWallet {
 
         // Wait for the multi-sig tx to be transmitted.
         broadcastTxPause.release();
-        Transaction broadcastMultiSig = broadcasts.take();
+        Transaction broadcastMultiSig = broadcasts.poll(5, TimeUnit.SECONDS);
         // Wait for the channel to finish opening.
         client.getChannelOpenFuture().get();
         assertEquals(broadcastMultiSig.getHash(), channelOpenFuture.get());
@@ -224,7 +224,7 @@ public class ChannelConnectionTest extends TestWithWallet {
 
         Thread.sleep(1250); // No timeouts once the channel is open
         Coin amount = client.state().getValueSpent();
-        q.take().assertPair(amount, null);
+        q.poll(5, TimeUnit.SECONDS).assertPair(amount, null);
         for (String info : new String[] {null, "one", "two"} ) {
             final ByteString bytes = (info==null) ? null :ByteString.copyFromUtf8(info);
             final PaymentIncrementAck ack = client.incrementPayment(CENT, bytes, userKeySetup).get();
@@ -234,7 +234,7 @@ public class ChannelConnectionTest extends TestWithWallet {
                 assertEquals("Ack info differs ", info, ackInfo.toStringUtf8());
             }
             amount = amount.add(CENT);
-            q.take().assertPair(amount, bytes);
+            q.poll(5, TimeUnit.SECONDS).assertPair(amount, bytes);
         }
         latch.await();
 
@@ -247,7 +247,7 @@ public class ChannelConnectionTest extends TestWithWallet {
         client.settle();
 
         broadcastTxPause.release();
-        Transaction settleTx = broadcasts.take();
+        Transaction settleTx = broadcasts.poll(5, TimeUnit.SECONDS);
         assertTrue(serverState.getState() == PaymentChannelServerState.State.CLOSING ||
                 serverState.getState() == PaymentChannelServerState.State.CLOSED);
         // Wait for the server thread to catch up with closing
@@ -314,7 +314,7 @@ public class ChannelConnectionTest extends TestWithWallet {
         client.settle();
         client.receiveMessage(pair.serverRecorder.checkNextMsg(MessageType.INITIATE));
         server.receiveMessage(pair.clientRecorder.checkNextMsg(MessageType.CLOSE));
-        assertEquals(CloseReason.CLIENT_REQUESTED_CLOSE, pair.serverRecorder.q.take());
+        assertEquals(CloseReason.CLIENT_REQUESTED_CLOSE, pair.serverRecorder.q.poll(5, TimeUnit.SECONDS));
 
 
     }
@@ -334,7 +334,7 @@ public class ChannelConnectionTest extends TestWithWallet {
                 .setType(MessageType.ERROR)
                 .setError(Protos.Error.newBuilder().setCode(Protos.Error.ErrorCode.TIMEOUT))
                 .build());
-        assertEquals(CloseReason.REMOTE_SENT_ERROR, pair.serverRecorder.q.take());
+        assertEquals(CloseReason.REMOTE_SENT_ERROR, pair.serverRecorder.q.poll(5, TimeUnit.SECONDS));
     }
 
     @Test
@@ -361,10 +361,10 @@ public class ChannelConnectionTest extends TestWithWallet {
         }
         broadcastTxPause.release();
         server.receiveMessage(pair.clientRecorder.checkNextMsg(MessageType.PROVIDE_CONTRACT));
-        broadcasts.take();
+        broadcasts.poll(5, TimeUnit.SECONDS);
         pair.serverRecorder.checkTotalPayment(Transaction.REFERENCE_DEFAULT_MIN_TX_FEE);
         client.receiveMessage(pair.serverRecorder.checkNextMsg(MessageType.CHANNEL_OPEN));
-        Sha256Hash contractHash = (Sha256Hash) pair.serverRecorder.q.take();
+        Sha256Hash contractHash = (Sha256Hash) pair.serverRecorder.q.poll(5, TimeUnit.SECONDS);
         pair.clientRecorder.checkInitiated();
         assertNull(pair.serverRecorder.q.poll());
         assertNull(pair.clientRecorder.q.poll());
@@ -416,10 +416,10 @@ public class ChannelConnectionTest extends TestWithWallet {
         }
         broadcastTxPause.release();
         server.receiveMessage(pair.clientRecorder.checkNextMsg(MessageType.PROVIDE_CONTRACT));
-        broadcasts.take();
+        broadcasts.poll(5, TimeUnit.SECONDS);
         pair.serverRecorder.checkTotalPayment(Transaction.REFERENCE_DEFAULT_MIN_TX_FEE);
         client.receiveMessage(pair.serverRecorder.checkNextMsg(MessageType.CHANNEL_OPEN));
-        Sha256Hash contractHash = (Sha256Hash) pair.serverRecorder.q.take();
+        Sha256Hash contractHash = (Sha256Hash) pair.serverRecorder.q.poll(5, TimeUnit.SECONDS);
         pair.clientRecorder.checkInitiated();
         assertNull(pair.serverRecorder.q.poll());
         assertNull(pair.clientRecorder.q.poll());
@@ -428,7 +428,7 @@ public class ChannelConnectionTest extends TestWithWallet {
         Coin amount = minPayment.add(CENT);
         client.incrementPayment(CENT);
         server.receiveMessage(pair.clientRecorder.checkNextMsg(MessageType.UPDATE_PAYMENT));
-        assertEquals(amount, ((ChannelTestUtils.UpdatePair)pair.serverRecorder.q.take()).amount);
+        assertEquals(amount, ((ChannelTestUtils.UpdatePair)pair.serverRecorder.q.poll(5, TimeUnit.SECONDS)).amount);
         server.close();
         server.connectionClosed();
         client.receiveMessage(pair.serverRecorder.checkNextMsg(MessageType.PAYMENT_ACK));
@@ -473,7 +473,7 @@ public class ChannelConnectionTest extends TestWithWallet {
         server.receiveMessage(clientVersionMsg);
         client.receiveMessage(pair.serverRecorder.checkNextMsg(MessageType.SERVER_VERSION));
         client.receiveMessage(pair.serverRecorder.checkNextMsg(MessageType.CHANNEL_OPEN));
-        assertEquals(contractHash, pair.serverRecorder.q.take());
+        assertEquals(contractHash, pair.serverRecorder.q.poll(5, TimeUnit.SECONDS));
         pair.clientRecorder.checkOpened();
         assertNull(pair.serverRecorder.q.poll());
         assertNull(pair.clientRecorder.q.poll());
@@ -532,12 +532,12 @@ public class ChannelConnectionTest extends TestWithWallet {
         newClientStates.deserializeWalletExtension(wallet, clientStoredChannels.serializeWalletExtension());
         broadcastTxPause.release();
         if (isMultiSigContract()) {
-            assertTrue(broadcasts.take().getOutput(0).getScriptPubKey().isSentToMultiSig());
+            assertTrue(broadcasts.poll(5, TimeUnit.SECONDS).getOutput(0).getScriptPubKey().isSentToMultiSig());
         } else {
-            assertTrue(broadcasts.take().getOutput(0).getScriptPubKey().isPayToScriptHash());
+            assertTrue(broadcasts.poll(5, TimeUnit.SECONDS).getOutput(0).getScriptPubKey().isPayToScriptHash());
         }
         broadcastTxPause.release();
-        assertEquals(TransactionConfidence.Source.SELF, broadcasts.take().getConfidence().getSource());
+        assertEquals(TransactionConfidence.Source.SELF, broadcasts.poll(5, TimeUnit.SECONDS).getConfidence().getSource());
         assertTrue(broadcasts.isEmpty());
         assertTrue(newClientStates.mapChannels.isEmpty());
         // Server also knows it's too late.
@@ -592,7 +592,7 @@ public class ChannelConnectionTest extends TestWithWallet {
                 .setServerVersion(Protos.ServerVersion.newBuilder().setMajor(-1))
                 .setType(MessageType.SERVER_VERSION).build());
         pair.clientRecorder.checkNextMsg(MessageType.ERROR);
-        assertEquals(CloseReason.NO_ACCEPTABLE_VERSION, pair.clientRecorder.q.take());
+        assertEquals(CloseReason.NO_ACCEPTABLE_VERSION, pair.clientRecorder.q.poll(5, TimeUnit.SECONDS));
         // Double-check that we cant do anything that requires an open channel
         try {
             client.incrementPayment(Coin.SATOSHI);
@@ -618,7 +618,7 @@ public class ChannelConnectionTest extends TestWithWallet {
                 .setType(MessageType.INITIATE).build());
 
         pair.clientRecorder.checkNextMsg(MessageType.ERROR);
-        assertEquals(CloseReason.TIME_WINDOW_UNACCEPTABLE, pair.clientRecorder.q.take());
+        assertEquals(CloseReason.TIME_WINDOW_UNACCEPTABLE, pair.clientRecorder.q.poll(5, TimeUnit.SECONDS));
         // Double-check that we cant do anything that requires an open channel
         try {
             client.incrementPayment(Coin.SATOSHI);
@@ -642,7 +642,7 @@ public class ChannelConnectionTest extends TestWithWallet {
                         .setMinPayment(Transaction.MIN_NONDUST_OUTPUT.value))
                 .setType(MessageType.INITIATE).build());
         pair.clientRecorder.checkNextMsg(MessageType.ERROR);
-        assertEquals(CloseReason.SERVER_REQUESTED_TOO_MUCH_VALUE, pair.clientRecorder.q.take());
+        assertEquals(CloseReason.SERVER_REQUESTED_TOO_MUCH_VALUE, pair.clientRecorder.q.poll(5, TimeUnit.SECONDS));
         // Double-check that we cant do anything that requires an open channel
         try {
             client.incrementPayment(Coin.SATOSHI);
@@ -717,7 +717,7 @@ public class ChannelConnectionTest extends TestWithWallet {
         initiateMsg.getInitiateBuilder().setMultisigKey(brokenKey);
         client.receiveMessage(initiateMsg.build());
         pair.clientRecorder.checkNextMsg(MessageType.ERROR);
-        assertEquals(CloseReason.REMOTE_SENT_INVALID_MESSAGE, pair.clientRecorder.q.take());
+        assertEquals(CloseReason.REMOTE_SENT_INVALID_MESSAGE, pair.clientRecorder.q.poll(5, TimeUnit.SECONDS));
     }
 
     @Test
@@ -732,7 +732,7 @@ public class ChannelConnectionTest extends TestWithWallet {
         client.receiveMessage(Protos.TwoWayChannelMessage.newBuilder()
                 .setType(MessageType.CHANNEL_OPEN).build());
         pair.clientRecorder.checkNextMsg(MessageType.ERROR);
-        assertEquals(CloseReason.REMOTE_SENT_INVALID_MESSAGE, pair.clientRecorder.q.take());
+        assertEquals(CloseReason.REMOTE_SENT_INVALID_MESSAGE, pair.clientRecorder.q.poll(5, TimeUnit.SECONDS));
     }
 
     @Test
@@ -747,7 +747,7 @@ public class ChannelConnectionTest extends TestWithWallet {
                 .setType(MessageType.CLIENT_VERSION).build());
         Protos.TwoWayChannelMessage error = pair.clientRecorder.checkNextMsg(MessageType.ERROR);
         assertEquals(Protos.Error.ErrorCode.SYNTAX_ERROR, error.getError().getCode());
-        assertEquals(CloseReason.REMOTE_SENT_INVALID_MESSAGE, pair.clientRecorder.q.take());
+        assertEquals(CloseReason.REMOTE_SENT_INVALID_MESSAGE, pair.clientRecorder.q.poll(5, TimeUnit.SECONDS));
    }
 
     @Test
@@ -771,10 +771,10 @@ public class ChannelConnectionTest extends TestWithWallet {
         }
         broadcastTxPause.release();
         server.receiveMessage(pair.clientRecorder.checkNextMsg(MessageType.PROVIDE_CONTRACT));
-        broadcasts.take();
+        broadcasts.poll(5, TimeUnit.SECONDS);
         pair.serverRecorder.checkTotalPayment(Transaction.REFERENCE_DEFAULT_MIN_TX_FEE);
         client.receiveMessage(pair.serverRecorder.checkNextMsg(MessageType.CHANNEL_OPEN));
-        Sha256Hash contractHash = (Sha256Hash) pair.serverRecorder.q.take();
+        Sha256Hash contractHash = (Sha256Hash) pair.serverRecorder.q.poll(5, TimeUnit.SECONDS);
         pair.clientRecorder.checkInitiated();
         assertNull(pair.serverRecorder.q.poll());
         assertNull(pair.clientRecorder.q.poll());
@@ -782,13 +782,13 @@ public class ChannelConnectionTest extends TestWithWallet {
         client.incrementPayment(client.state().getValueRefunded());
         broadcastTxPause.release();
         server.receiveMessage(pair.clientRecorder.checkNextMsg(MessageType.UPDATE_PAYMENT));
-        broadcasts.take();
+        broadcasts.poll(5, TimeUnit.SECONDS);
         // The channel is now empty.
         assertEquals(Coin.ZERO, client.state().getValueRefunded());
-        pair.serverRecorder.q.take();  // Take the Coin.
+        pair.serverRecorder.q.poll(5, TimeUnit.SECONDS);  // Take the Coin.
         client.receiveMessage(pair.serverRecorder.checkNextMsg(MessageType.PAYMENT_ACK));
         client.receiveMessage(pair.serverRecorder.checkNextMsg(MessageType.CLOSE));
-        assertEquals(CloseReason.SERVER_REQUESTED_CLOSE, pair.clientRecorder.q.take());
+        assertEquals(CloseReason.SERVER_REQUESTED_CLOSE, pair.clientRecorder.q.poll(5, TimeUnit.SECONDS));
         client.connectionClosed();
 
         // Now try opening a new channel with the same server ID and verify the client asks for a new channel.
@@ -819,17 +819,17 @@ public class ChannelConnectionTest extends TestWithWallet {
             }
             broadcastTxPause.release();
             server.receiveMessage(pair.clientRecorder.checkNextMsg(MessageType.PROVIDE_CONTRACT));
-            broadcasts.take();
+            broadcasts.poll(5, TimeUnit.SECONDS);
             pair.serverRecorder.checkTotalPayment(Transaction.REFERENCE_DEFAULT_MIN_TX_FEE);
             client.receiveMessage(pair.serverRecorder.checkNextMsg(MessageType.CHANNEL_OPEN));
-            Sha256Hash contractHash = (Sha256Hash) pair.serverRecorder.q.take();
+            Sha256Hash contractHash = (Sha256Hash) pair.serverRecorder.q.poll(5, TimeUnit.SECONDS);
             pair.clientRecorder.checkInitiated();
             assertNull(pair.serverRecorder.q.poll());
             assertNull(pair.clientRecorder.q.poll());
             for (int i = 0; i < 3; i++) {
                 ListenableFuture<PaymentIncrementAck> future = client.incrementPayment(CENT);
                 server.receiveMessage(pair.clientRecorder.checkNextMsg(MessageType.UPDATE_PAYMENT));
-                pair.serverRecorder.q.take();
+                pair.serverRecorder.q.poll(5, TimeUnit.SECONDS);
                 final Protos.TwoWayChannelMessage msg = pair.serverRecorder.checkNextMsg(MessageType.PAYMENT_ACK);
                 final Protos.PaymentAck paymentAck = msg.getPaymentAck();
                 assertTrue("No PaymentAck.Info", paymentAck.hasInfo());
@@ -845,7 +845,7 @@ public class ChannelConnectionTest extends TestWithWallet {
             broadcastTxPause.release();
             client.settle();
             server.receiveMessage(pair.clientRecorder.checkNextMsg(MessageType.CLOSE));
-            Transaction settlement1 = broadcasts.take();
+            Transaction settlement1 = broadcasts.poll(5, TimeUnit.SECONDS);
             // Server sends back the settle TX it just broadcast.
             final Protos.TwoWayChannelMessage closeMsg = pair.serverRecorder.checkNextMsg(MessageType.CLOSE);
             final Transaction settlement2 = new Transaction(PARAMS, closeMsg.getSettlement().getTx().toByteArray());
@@ -875,10 +875,10 @@ public class ChannelConnectionTest extends TestWithWallet {
             }
             broadcastTxPause.release();
             server.receiveMessage(pair.clientRecorder.checkNextMsg(MessageType.PROVIDE_CONTRACT));
-            broadcasts.take();
+            broadcasts.poll(5, TimeUnit.SECONDS);
             pair.serverRecorder.checkTotalPayment(Transaction.REFERENCE_DEFAULT_MIN_TX_FEE);
             client.receiveMessage(pair.serverRecorder.checkNextMsg(MessageType.CHANNEL_OPEN));
-            Sha256Hash contractHash = (Sha256Hash) pair.serverRecorder.q.take();
+            Sha256Hash contractHash = (Sha256Hash) pair.serverRecorder.q.poll(5, TimeUnit.SECONDS);
             pair.clientRecorder.checkInitiated();
             assertNull(pair.serverRecorder.q.poll());
             assertNull(pair.clientRecorder.q.poll());
