@@ -3926,6 +3926,7 @@ public class Wallet extends BaseTaggableObject
      * @throws MultipleOpReturnRequested if there is more than one OP_RETURN output for the resultant transaction.
      */
     public void completeTx(SendRequest req) throws InsufficientMoneyException {
+        req.setUseForkId(true);     // this library will always send BCH transactions
         lock.lock();
         try {
             checkArgument(!req.completed, "Given SendRequest has already been completed.");
@@ -4042,6 +4043,7 @@ public class Wallet extends BaseTaggableObject
      * transaction will be complete in the end.</p>
      */
     public void signTransaction(SendRequest req) {
+        req.setUseForkId(true);
         lock.lock();
         try {
             Transaction tx = req.tx;
