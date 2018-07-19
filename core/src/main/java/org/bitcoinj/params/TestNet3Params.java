@@ -73,10 +73,8 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         dnsSeeds = new String[] {
                "testnet-seed.bitcoinabc.org",
                 "testnet-seed-abc.bitcoinforks.org",
-                "testnet-seed.bitcoinunlimited.info",
                 "testnet-seed.bitprim.org",
-                "testnet-seed.deadalnix.me",
-                "testnet-seeder.criptolayer.net"
+                "testnet-seed.deadalnix.me"
         };
         addrSeeds = null;
         bip32HeaderPub = 0x043587CF;
