@@ -1,5 +1,6 @@
 /*
  * Copyright 2011 Google Inc.
+ * Copyright 2018 the bitcoinj-cash developers
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +13,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * This file has been modified by the bitcoinj-cash developers for the bitcoinj-cash project.
+ * The original file was from the bitcoinj project (https://github.com/bitcoinj/bitcoinj).
  */
 
 package org.bitcoinj.core;
@@ -30,15 +34,22 @@ public class VerificationException extends RuntimeException {
         super(msg, t);
     }
 
-    public static class EmptyInputsOrOutputs extends VerificationException {
-        public EmptyInputsOrOutputs() {
-            super("Transaction had no inputs or no outputs.");
+    public static class BlockVersionOutOfDate extends VerificationException {
+        public BlockVersionOutOfDate(final long version) {
+            super("Block version #"
+                    + version + " is outdated.");
         }
     }
 
-    public static class LargerThanMaxBlockSize extends VerificationException {
-        public LargerThanMaxBlockSize() {
-            super("Transaction larger than MAX_BLOCK_SIZE");
+    public static class CoinbaseHeightMismatch extends VerificationException {
+        public CoinbaseHeightMismatch(final String message) {
+            super(message);
+        }
+    }
+
+    public static class CoinbaseScriptSizeOutOfRange extends VerificationException {
+        public CoinbaseScriptSizeOutOfRange() {
+            super("Coinbase script size out of range");
         }
     }
 
@@ -48,9 +59,9 @@ public class VerificationException extends RuntimeException {
         }
     }
 
-    public static class NegativeValueOutput extends VerificationException {
-        public NegativeValueOutput() {
-            super("Transaction output negative");
+    public static class EmptyInputsOrOutputs extends VerificationException {
+        public EmptyInputsOrOutputs() {
+            super("Transaction had no inputs or no outputs.");
         }
     }
 
@@ -60,30 +71,32 @@ public class VerificationException extends RuntimeException {
         }
     }
 
-
-    public static class CoinbaseScriptSizeOutOfRange extends VerificationException {
-        public CoinbaseScriptSizeOutOfRange() {
-            super("Coinbase script size out of range");
+    public static class LargerThanMaxBlockSize extends VerificationException {
+        public LargerThanMaxBlockSize() {
+            super("Transaction larger than MAX_BLOCK_SIZE");
         }
     }
 
-
-    public static class BlockVersionOutOfDate extends VerificationException {
-        public BlockVersionOutOfDate(final long version) {
-            super("Block version #"
-                + version + " is outdated.");
+    public static class NegativeValueOutput extends VerificationException {
+        public NegativeValueOutput() {
+            super("Transaction output negative");
         }
     }
+
+    public static class SignatureFormatError extends VerificationException {
+        public SignatureFormatError(String msg) {
+            super(msg);
+        }
+
+        public SignatureFormatError(Exception e) {
+            super(e);
+        }
+    }
+
 
     public static class UnexpectedCoinbaseInput extends VerificationException {
         public UnexpectedCoinbaseInput() {
             super("Coinbase input as input in non-coinbase transaction");
-        }
-    }
-
-    public static class CoinbaseHeightMismatch extends VerificationException {
-        public CoinbaseHeightMismatch(final String message) {
-            super(message);
         }
     }
 }

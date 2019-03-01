@@ -427,4 +427,16 @@ public class TransactionOutput extends ChildMessage {
     public int hashCode() {
         return Objects.hashCode(value, parent, Arrays.hashCode(scriptBytes));
     }
+
+    public boolean isOpReturn() {
+        return getScriptPubKey() != null && getScriptPubKey().isOpReturn();
+    }
+
+    public byte[] getOpReturnData() {
+        if (isOpReturn()) {
+            return getScriptPubKey().getChunks().get(1).data;
+        }
+        return null;
+    }
+
 }

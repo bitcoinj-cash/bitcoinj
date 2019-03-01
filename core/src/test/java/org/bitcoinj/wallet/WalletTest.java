@@ -3498,4 +3498,37 @@ public class WalletTest extends TestWithWallet {
 
         // TODO: test shared wallet calculation here
     }
+
+
+    @Test
+    public void testReceiveWithReturnData() throws Exception {
+        final String dataSent = "hello world";
+        final StringBuffer dataReceived = new StringBuffer();
+
+        // Configure listener
+        wallet.addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
+            @Override
+            public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
+                if (tx.isOpReturn()) {
+                    dataReceived.append(new String(tx.getOpReturnData()));
+                }
+            }
+        });
+
+        // Receive 2 BTC in 2 separate transactions
+        Transaction toMe1 = createFakeTxToMeWithReturnData(PARAMS, COIN.multiply(2), myAddress, "hello world".getBytes());
+        sendMoneyToWallet(AbstractBlockChain.NewBlockType.BEST_CHAIN, toMe1);
+
+        // Check we calculate the total received correctly
+        assertEquals(COIN.multiply(2), wallet.getTotalReceived());
+
+        sendMoneyToWallet(AbstractBlockChain.NewBlockType.BEST_CHAIN, COIN);
+
+        log.info("Wait for user thread");
+        Threading.waitForUserCode();
+
+        assertEquals(dataSent, dataReceived.toString());
+
+    }
+
 }

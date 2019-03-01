@@ -160,6 +160,24 @@ public class Transaction extends ChildMessage {
     // can properly keep track of optimal encoded size
     private int optimalEncodingMessageSize;
 
+    public boolean isOpReturn() {
+        if (getOpReturnData() != null) {
+            return true;
+        }
+        return false;
+    }
+
+    public byte[] getOpReturnData() {
+        // Only one OP_RETURN output per transaction is allowed as "standard" transaction
+        // So just return the first OP_RETURN data found
+        for (TransactionOutput output : outputs) {
+            if (output.isOpReturn()) {
+                return output.getOpReturnData();
+            }
+        }
+        return null;
+    }
+
     /**
      * This enum describes the underlying reason the transaction was created. It's useful for rendering wallet GUIs
      * more appropriately.
@@ -953,6 +971,12 @@ public class Transaction extends ChildMessage {
         return addOutput(new TransactionOutput(params, this, value, address));
     }
 
+
+    public TransactionOutput addData(byte[] data) {
+        Script script = ScriptBuilder.createOpReturnScript(data);
+        return addOutput(new TransactionOutput(params, this, Coin.ZERO, script.getProgram()));
+    }
+
     /**
      * Creates an output that pays to the given pubkey directly (no address) with the given value, adds it to this
      * transaction, and returns the new output.
@@ -1063,9 +1087,10 @@ public class Transaction extends ChildMessage {
             byte[] redeemScript,
             Coin value,
             SigHash hashType,
-            boolean anyoneCanPay)
+            boolean anyoneCanPay,
+            Set<Script.VerifyFlag> verifyFlags)
     {
-        Sha256Hash hash = hashForSignatureWitness(inputIndex, redeemScript, value, hashType, anyoneCanPay);
+        Sha256Hash hash = hashForSignatureWitness(inputIndex, redeemScript, value, hashType, anyoneCanPay, verifyFlags);
         return new TransactionSignature(key.sign(hash, aesKey), hashType, anyoneCanPay, true);
     }
 
@@ -1101,9 +1126,10 @@ public class Transaction extends ChildMessage {
             Script redeemScript,
             Coin value,
             SigHash hashType,
-            boolean anyoneCanPay)
+            boolean anyoneCanPay,
+            Set<Script.VerifyFlag> verifyFlags)
     {
-        Sha256Hash hash = hashForSignatureWitness(inputIndex, redeemScript.getProgram(), value, hashType, anyoneCanPay);
+        Sha256Hash hash = hashForSignatureWitness(inputIndex, redeemScript.getProgram(), value, hashType, anyoneCanPay, verifyFlags);
         return new TransactionSignature(key.sign(hash, aesKey), hashType, anyoneCanPay, true);
     }
     /**
@@ -1256,10 +1282,22 @@ public class Transaction extends ChildMessage {
             Script scriptCode,
             Coin prevValue,
             SigHash type,
+            boolean anyoneCanPay,
+            Set<Script.VerifyFlag> verifyFlags)
+    {
+        byte[] connectedScript = scriptCode.getProgram();
+        return hashForSignatureWitness(inputIndex, connectedScript, prevValue, type, anyoneCanPay, verifyFlags);
+    }
+
+    public synchronized Sha256Hash hashForSignatureWitness(
+            int inputIndex,
+            Script scriptCode,
+            Coin prevValue,
+            SigHash type,
             boolean anyoneCanPay)
     {
         byte[] connectedScript = scriptCode.getProgram();
-        return hashForSignatureWitness(inputIndex, connectedScript, prevValue, type, anyoneCanPay);
+        return hashForSignatureWitness(inputIndex, connectedScript, prevValue, type, anyoneCanPay, null);
     }
 
     public synchronized Sha256Hash hashForSignatureWitness(
@@ -1267,11 +1305,38 @@ public class Transaction extends ChildMessage {
             byte[] connectedScript,
             Coin prevValue,
             SigHash type,
-            boolean anyoneCanPay)
+            boolean anyoneCanPay) {
+        return hashForSignatureWitness(inputIndex, connectedScript, prevValue, type, anyoneCanPay, null);
+    }
+
+    public synchronized Sha256Hash hashForSignatureWitness(
+            int inputIndex,
+            byte[] connectedScript,
+            Coin prevValue,
+            SigHash type,
+            boolean anyoneCanPay,
+            Set<Script.VerifyFlag> verifyFlags)
     {
         byte sigHashType = (byte) TransactionSignature.calcSigHashValue(type, anyoneCanPay, true);
         ByteArrayOutputStream bos = new UnsafeByteArrayOutputStream(length == UNKNOWN_LENGTH ? 256 : length + 4);
         try {
+            // Replay Protection Implementation:
+            // If the "REPLAY PRIOTECTION" Flag is activated, we implement the Replay Protection Algorithm, which
+            // allows us the use different Fork IDS in the future. The Fork ID will be stored in the 24 more significant
+            // bits of nSigHashType (which is not a single byte now, but a 32 one).
+            // The following implementation is based on the one from bitcoin-abc:
+
+            int nSigHashType = sigHashType;
+            if ((verifyFlags!= null) && verifyFlags.contains(Script.VerifyFlag.REPLAY_PROTECTION)) {
+                // Legacy chain's value for fork id must be of the form 0xffxxxx.
+                // By xoring with 0xdead, we ensure that the value will be different
+                // from the original one, even if it already starts with 0xff.
+
+                int forkId = 0; // for now, the forkID is ZERO.
+                int newForkValue = forkId ^ 0xdead;
+                nSigHashType = sigHashType | ((0xff0000 | newForkValue) << 8);
+            }
+
             byte[] hashPrevouts = new byte[32];
             byte[] hashSequence = new byte[32];
             byte[] hashOutputs = new byte[32];
@@ -1326,7 +1391,8 @@ public class Transaction extends ChildMessage {
             uint32ToByteStreamLE(inputs.get(inputIndex).getSequenceNumber(), bos);
             bos.write(hashOutputs);
             uint32ToByteStreamLE(this.lockTime, bos);
-            uint32ToByteStreamLE(0x000000ff & sigHashType, bos);
+           // uint32ToByteStreamLE(0x000000ff & sigHashType, bos);
+            uint32ToByteStreamLE(nSigHashType, bos);
         } catch (IOException e) {
             throw new RuntimeException(e);  // Cannot happen.
         }

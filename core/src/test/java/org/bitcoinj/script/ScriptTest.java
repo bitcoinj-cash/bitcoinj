@@ -2,6 +2,7 @@
  * Copyright 2011 Google Inc.
  * Copyright 2014 Andreas Schildbach
  * Copyright 2017 Thomas König
+ * Copyright 2018 the bitcoinj-cash developers
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +15,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * This file has been modified by the bitcoinj-cash developers for the bitcoinj-cash project.
+ * The original file was from the bitcoinj project (https://github.com/bitcoinj/bitcoinj).
  */
 
 package org.bitcoinj.script;
@@ -39,14 +43,14 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.util.*;
 
 import static org.bitcoinj.core.Utils.HEX;
 import static org.bitcoinj.core.Utils.toByteArray;
 import static org.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
+import static org.bitcoinj.script.ScriptHelpers.parseScriptString;
+import static org.bitcoinj.script.ScriptHelpers.parseVerifyFlags;
 import static org.bitcoinj.script.ScriptOpCodes.OP_0;
-import static org.bitcoinj.script.ScriptOpCodes.OP_INVALIDOPCODE;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
 import org.junit.Before;
@@ -236,56 +240,6 @@ public class ScriptTest {
         assertEquals("OP_0 push length", 0, stack.get(0).length);
     }
 
-
-    private Script parseScriptString(String string) throws IOException {
-        String[] words = string.split("[ \\t\\n]");
-
-        UnsafeByteArrayOutputStream out = new UnsafeByteArrayOutputStream();
-
-        for(String w : words) {
-            if (w.equals(""))
-                continue;
-            if (w.matches("^-?[0-9]*$")) {
-                // Number
-                long val = Long.parseLong(w);
-                if (val >= -1 && val <= 16)
-                    out.write(Script.encodeToOpN((int)val));
-                else
-                    Script.writeBytes(out, Utils.reverseBytes(Utils.encodeMPI(BigInteger.valueOf(val), false)));
-            } else if (w.matches("^0x[0-9a-fA-F]*$")) {
-                // Raw hex data, inserted NOT pushed onto stack:
-                out.write(HEX.decode(w.substring(2).toLowerCase()));
-            } else if (w.length() >= 2 && w.startsWith("'") && w.endsWith("'")) {
-                // Single-quoted string, pushed as data. NOTE: this is poor-man's
-                // parsing, spaces/tabs/newlines in single-quoted strings won't work.
-                Script.writeBytes(out, w.substring(1, w.length() - 1).getBytes(Charset.forName("UTF-8")));
-            } else if (ScriptOpCodes.getOpCode(w) != OP_INVALIDOPCODE) {
-                // opcode, e.g. OP_ADD or OP_1:
-                out.write(ScriptOpCodes.getOpCode(w));
-            } else if (w.startsWith("OP_") && ScriptOpCodes.getOpCode(w.substring(3)) != OP_INVALIDOPCODE) {
-                // opcode, e.g. OP_ADD or OP_1:
-                out.write(ScriptOpCodes.getOpCode(w.substring(3)));
-            } else {
-                throw new RuntimeException("Invalid Data");
-            }
-        }
-
-        return new Script(out.toByteArray());
-    }
-
-    private Set<VerifyFlag> parseVerifyFlags(String str) {
-        Set<VerifyFlag> flags = EnumSet.noneOf(VerifyFlag.class);
-        if (!"NONE".equals(str)) {
-            for (String flag : str.split(",")) {
-                try {
-                    flags.add(VerifyFlag.valueOf(flag));
-                } catch (IllegalArgumentException x) {
-                    log.debug("Cannot handle verify flag {} -- ignored.", flag);
-                }
-            }
-        }
-        return flags;
-    }
 
     @Test
     public void dataDrivenValidScripts() throws Exception {
@@ -718,7 +672,7 @@ public class ScriptTest {
                     Assert.assertArrayEquals(bitwiseScript(first, secondOverflow, "CAT"), cat);
                     fail("CAT should fail when result is more than " + MAX_SCRIPT_ELEMENT_SIZE);
                 } catch (ScriptException e) {
-                    Assert.assertEquals("Push value size limit exceeded.", e.getMessage());
+                    Assert.assertEquals("attempted to push value on the stack that was too large", e.getMessage());
                 }
             }
 
@@ -740,8 +694,8 @@ public class ScriptTest {
         Assert.assertArrayEquals(B, executeMonolithScript(new ScriptBuilder().data(A_B).number(1).op(ScriptOpCodes.OP_SPLIT).build()));
         Assert.assertArrayEquals(EMPTY, executeMonolithScript(new ScriptBuilder().data(A_B).number(2).op(ScriptOpCodes.OP_SPLIT).build()));
 
-        executeFailedMonolithScript(new ScriptBuilder().op(ScriptOpCodes.OP_SPLIT).build(), "Invalid stack operation.");
-        executeFailedMonolithScript(new ScriptBuilder().data(EMPTY).number(1).op(ScriptOpCodes.OP_SPLIT).build(), "Invalid OP_SPLIT range.");
+        executeFailedMonolithScript(new ScriptBuilder().op(ScriptOpCodes.OP_SPLIT).build(), "the operation was invalid given the contents of the stack");
+        executeFailedMonolithScript(new ScriptBuilder().data(EMPTY).number(1).op(ScriptOpCodes.OP_SPLIT).build(), "invalid OP_SPLIT range");
     }
 
     /** BIN2NUM **/
@@ -757,20 +711,20 @@ public class ScriptTest {
         checkBin2NumOp(toByteArray(0xab, 0xcd, 0x7f, 0x42), toByteArray(0xab, 0xcd, 0x7f, 0x42, 0x00));
 
         // Empty stack
-        executeFailedMonolithScript(new ScriptBuilder().op(ScriptOpCodes.OP_BIN2NUM).build(), "Invalid stack operation.");
-        executeFailedMonolithScript(new ScriptBuilder().op(ScriptOpCodes.OP_NUM2BIN).build(), "Invalid stack operation.");
+        executeFailedMonolithScript(new ScriptBuilder().op(ScriptOpCodes.OP_BIN2NUM).build(), "the operation was invalid given the contents of the stack");
+        executeFailedMonolithScript(new ScriptBuilder().op(ScriptOpCodes.OP_NUM2BIN).build(), "the operation was invalid given the contents of the stack");
 
         // Values that do not fit in 4 bytes are considered out of range for BIN2NUM
-        executeFailedMonolithScript(new ScriptBuilder().data(toByteArray(0xab, 0xcd, 0xef, 0xc2, 0x80)).op(ScriptOpCodes.OP_BIN2NUM).build(), "Given operand is not a number within the valid range [-2^31...2^31]");
-        executeFailedMonolithScript(new ScriptBuilder().data(toByteArray(0x00, 0x00, 0x00, 0x80, 0x80)).op(ScriptOpCodes.OP_BIN2NUM).build(), "Given operand is not a number within the valid range [-2^31...2^31]");
+        executeFailedMonolithScript(new ScriptBuilder().data(toByteArray(0xab, 0xcd, 0xef, 0xc2, 0x80)).op(ScriptOpCodes.OP_BIN2NUM).build(), "operand is not a number in the valid range");
+        executeFailedMonolithScript(new ScriptBuilder().data(toByteArray(0x00, 0x00, 0x00, 0x80, 0x80)).op(ScriptOpCodes.OP_BIN2NUM).build(), "operand is not a number in the valid range");
 
         // NUM2BIN require 2 elements on the stack.
-        executeFailedMonolithScript(new ScriptBuilder().data(toByteArray( 0x00)).op(ScriptOpCodes.OP_NUM2BIN).build(), "Invalid stack operation.");
+        executeFailedMonolithScript(new ScriptBuilder().data(toByteArray( 0x00)).op(ScriptOpCodes.OP_NUM2BIN).build(), "the operation was invalid given the contents of the stack");
 
-        executeFailedMonolithScript(new ScriptBuilder().data(new byte[0]).data(toByteArray(0x09, 0x02)).op(ScriptOpCodes.OP_NUM2BIN).build(), "Push value size limit exceeded.");
+        executeFailedMonolithScript(new ScriptBuilder().data(new byte[0]).data(toByteArray(0x09, 0x02)).op(ScriptOpCodes.OP_NUM2BIN).build(), "attempted to push value on the stack that was too large");
 
         // Check that the requested encoding is possible.
-        executeFailedMonolithScript(new ScriptBuilder().data(toByteArray(0xab, 0xcd, 0xef, 0x80)).data(toByteArray(0x03)).op(ScriptOpCodes.OP_NUM2BIN).build(), "The requested encoding is impossible to satisfy.");
+        executeFailedMonolithScript(new ScriptBuilder().data(toByteArray(0xab, 0xcd, 0xef, 0x80)).data(toByteArray(0x03)).op(ScriptOpCodes.OP_NUM2BIN).build(), "the encoding is not possible");
     }
 
     private void checkBin2NumOp(byte[] n, byte[] expected) {

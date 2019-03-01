@@ -3804,6 +3804,16 @@ public class Wallet extends BaseTaggableObject
     }
 
 
+    public SendResult sendData(TransactionBroadcaster broadcaster, byte[] data, boolean useforkId) throws InsufficientMoneyException {
+        Transaction tx = new Transaction(params);
+        tx.addData(data);
+        SendRequest request = SendRequest.forTx(tx);
+        request.setUseForkId(useforkId);
+        return sendCoins(broadcaster, request);
+
+    }
+
+
     public SendResult sendCoins(TransactionBroadcaster broadcaster, Address to, Coin value, boolean useforkId) throws InsufficientMoneyException {
         SendRequest request = SendRequest.to(to, value);
         request.setUseForkId(useforkId);

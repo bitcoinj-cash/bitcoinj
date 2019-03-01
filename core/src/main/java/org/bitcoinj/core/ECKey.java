@@ -2,6 +2,7 @@
  * Copyright 2011 Google Inc.
  * Copyright 2014 Andreas Schildbach
  * Copyright 2014-2016 the libsecp256k1 contributors
+ * Copyright 2018 the bitcoinj-cash developers
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +15,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * This file has been modified by the bitcoinj-cash developers for the bitcoinj-cash project.
+ * The original file was from the bitcoinj project (https://github.com/bitcoinj/bitcoinj).
  */
 
 package org.bitcoinj.core;
 
+import org.bitcoinj.core.VerificationException.*;
 import org.bitcoinj.crypto.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
@@ -580,19 +585,15 @@ public class ECKey implements EncryptableItem {
                 decoder = new ASN1InputStream(bytes);
                 DLSequence seq = (DLSequence) decoder.readObject();
                 if (seq == null)
-                    throw new RuntimeException("Reached past end of ASN.1 stream.");
+                    throw new SignatureFormatError("Reached past end of ASN.1 stream.");
                 ASN1Integer r, s;
-                try {
-                    r = (ASN1Integer) seq.getObjectAt(0);
-                    s = (ASN1Integer) seq.getObjectAt(1);
-                } catch (ClassCastException e) {
-                    throw new IllegalArgumentException(e);
-                }
+                r = (ASN1Integer) seq.getObjectAt(0);
+                s = (ASN1Integer) seq.getObjectAt(1);
                 // OpenSSL deviates from the DER spec by interpreting these values as unsigned, though they should not be
                 // Thus, we always use the positive versions. See: http://r6.ca/blog/20111119T211504Z.html
                 return new ECDSASignature(r.getPositiveValue(), s.getPositiveValue());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (Exception e) {
+                throw new SignatureFormatError(e);
             } finally {
                 if (decoder != null)
                     try { decoder.close(); } catch (IOException x) {}
@@ -713,15 +714,19 @@ public class ECKey implements EncryptableItem {
         }
 
         ECDSASigner signer = new ECDSASigner();
-        ECPublicKeyParameters params = new ECPublicKeyParameters(CURVE.getCurve().decodePoint(pub), CURVE);
-        signer.init(false, params);
         try {
+            ECPublicKeyParameters params = new ECPublicKeyParameters(CURVE.getCurve().decodePoint(pub), CURVE);
+            signer.init(false, params);
             return signer.verifySignature(data, signature.r, signature.s);
         } catch (NullPointerException e) {
             // Bouncy Castle contains a bug that can cause NPEs given specially crafted signatures. Those signatures
             // are inherently invalid/attack sigs so we just fail them here rather than crash the thread.
             log.error("Caught NPE inside bouncy castle", e);
             return false;
+        } catch (IllegalArgumentException e) {
+            throw new SignatureFormatError(e);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new SignatureFormatError(e);
         }
     }
 

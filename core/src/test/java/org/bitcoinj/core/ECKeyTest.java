@@ -402,8 +402,15 @@ public class ECKeyTest {
         in.close();
     }
 
+    // NOTE: 2018-07-16:
+    // The "isEncodingCanonical" method in "TransactionSignature" does NOT check the content
+    // of the SIGHASH byte, since it's out of scope of the DER specification. The
+    // "sig_noncanonical.json" file contains signatures correct from DER perspective, but with
+    // WRONG  SIGHASH types, therefore they are correct from "encodingCanonical" perspective. If
+    // we need to also check the content of the SIGHASH, then we need to apply an additional
+    // method: "isValidHashType". We also renamed the test to reflect this.
     @Test
-    public void testNonCanonicalSigs() throws Exception {
+    public void testNonCanonicalOrWrongSighashSigs() throws Exception {
         // Tests the noncanonical sigs from Bitcoin Core unit tests
         InputStream in = getClass().getResourceAsStream("sig_noncanonical.json");
 
@@ -420,7 +427,9 @@ public class ECKeyTest {
 
             try {
                 final String sigStr = sig.toString();
-                assertFalse(TransactionSignature.isEncodingCanonical(HEX.decode(sigStr)));
+                byte[] signature = HEX.decode(sigStr);
+                assertFalse(TransactionSignature.isEncodingCanonical(signature)
+                             && TransactionSignature.isValidHashType(signature));
             } catch (IllegalArgumentException e) {
                 // Expected for non-hex strings in the JSON that we should ignore
             }

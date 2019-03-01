@@ -83,6 +83,30 @@ public class FakeTxBuilder {
     }
 
     /**
+     * Create a fake TX of sufficient realism to exercise the unit tests. Two outputs, one to nobody (return data, 0 coins) and other
+     * to us (the change) with all the value expended from the UTXO
+     */
+    public static Transaction createFakeTxToMeWithReturnData(NetworkParameters params, Coin value, Address to, byte[] data) {
+        Transaction t = new Transaction(params);
+        t.addData(data);
+
+        TransactionOutput change = new TransactionOutput(params, t, value, to);
+        t.addOutput(change);
+
+        // Make a previous tx simply to send us sufficient coins. This prev tx is not really valid but it doesn't
+        // matter for our purposes.
+        Transaction prevTx = new Transaction(params);
+        TransactionOutput prevOut = new TransactionOutput(params, prevTx, value, to);
+        prevTx.addOutput(prevOut);
+        // Connect it.
+        t.addInput(prevOut).setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
+        // Fake signature.
+        // Serialize/deserialize to ensure internal state is stripped, as if it had been read from the wire.
+        return roundTripTransaction(params, t);
+    }
+
+
+    /**
      * Create a fake TX for unit tests, for use with unit tests that need greater control. One outputs, 2 random inputs,
      * split randomly to create randomness.
      */
